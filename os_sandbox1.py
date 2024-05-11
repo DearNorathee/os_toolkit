@@ -1,6 +1,33 @@
 from pathlib import Path
 from typing import List, Tuple, Union, Literal
 
+def filesize_in_folder(folder_path: Union[str, Path]) -> pd.DataFrame:
+    # Convert folder_path to Path object if it's a string
+    if isinstance(folder_path, str):
+        folder_path = Path(folder_path)
+
+    # Get a list of all files and folders in the specified folder
+    items = [item for item in folder_path.glob('*')]
+
+    # Create a list to store the file/folder information
+    data = []
+
+    # Calculate the total size of all files and folders
+    total_size = sum(item.stat().st_size for item in items)
+
+    # Iterate over each file/folder and collect the necessary information
+    for item in items:
+        name = item.name
+        size = item.stat().st_size
+        size_prop = size / total_size if total_size > 0 else 0
+
+        data.append([name, size, size_prop])
+
+    # Create a pandas DataFrame from the collected data
+    df = pd.DataFrame(data, columns=['name', 'filesize', 'filesize_prop'])
+
+    return df
+
 # Sub
 def create_folders(folder: Union[str, Path], 
                    name_list: List[str], 
