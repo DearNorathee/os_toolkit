@@ -1,32 +1,119 @@
 from pathlib import Path
 from typing import List, Tuple, Union, Literal
+import pandas as pd
+import os 
+import shutil
+
+
+def os_add_extension(ori_path, added_extension, inplace = True):
+
+    """
+    Add an extension to file paths.
+
+    This function appends a specified extension to file paths. The function can modify the original file paths or return new file paths with the added extension.
+
+    Parameters
+    ----------
+    ori_path : str or list of str
+        The original file path or a list of file paths to which the extension will be added.
+    added_extension : str
+        The extension to be added to the file path(s). The extension can be provided with or without the leading dot (e.g., '.txt' or 'txt').
+    inplace : bool, optional, default=True
+        If True, the function modifies the original file path(s). If False, the function returns new file path(s) with the added extension.
+
+    Returns
+    -------
+    str or list of str
+        If `inplace` is True, returns the modified original file path or list of file paths. 
+        If `inplace` is False, returns a new file path or list of file paths with the added extension. 
+        If a single file path is provided and `inplace` is False, returns a single modified file path.
+
+    Examples
+    --------
+    Add an extension to a single file path and modify the original path:
+
+    >>> os_add_extension('example', 'txt')
+    'example.txt'
+
+    Add an extension to a list of file paths and return new paths:
+
+    >>> os_add_extension(['file1', 'file2'], '.md', inplace=False)
+    ['file1.md', 'file2.md']
+    """
+
+    # TOFIX!! still doesn't work
+    # still can't modify the text direclty
+    # imported from "C:\Users\Heng2020\OneDrive\Python NLP\NLP 05_UsefulSenLabel\sen_useful_GPT01.py"
+    ori_path_in = [ori_path] if isinstance(ori_path, str) else ori_path
+    
+    # for now I only write added_extension to support only string
+    
+    outpath = []
+
+    
+    if isinstance(added_extension, str):
+        added_extension_in = added_extension if "." in added_extension else "." + added_extension
+        
+        for i,curr_path in enumerate(ori_path):
+            if inplace:
+                curr_path = curr_path if added_extension in curr_path else curr_path + added_extension_in
+                ori_path[i] = curr_path
+
+                
+            else:
+                curr_path_temp = curr_path if added_extension in curr_path else curr_path + added_extension_in
+                outpath.append(curr_path_temp)
+    
+    if inplace:
+        return ori_path
+    else:
+        # return the string if outpath has only 1 element, otherwise return the whole list
+        if len(outpath) == 1:
+            return outpath[0]
+        else:
+            return outpath
 
 def filesize_in_folder(folder_path: Union[str, Path]) -> pd.DataFrame:
+# still doesn't work
+## FIXME
+
     # Convert folder_path to Path object if it's a string
     if isinstance(folder_path, str):
         folder_path = Path(folder_path)
 
-    # Get a list of all files and folders in the specified folder
-    items = [item for item in folder_path.glob('*')]
+    # Get the drive information
+    drive = folder_path.drive
+    total_size, used_size, free_size = shutil.disk_usage(drive)
 
     # Create a list to store the file/folder information
     data = []
 
-    # Calculate the total size of all files and folders
-    total_size = sum(item.stat().st_size for item in items)
+    # Recursively iterate over files and folders
+    for root, dirs, files in os.walk(folder_path):
+        # Calculate the size of each file
+        for file in files:
+            file_path = os.path.join(root, file)
+            size = os.path.getsize(file_path)
+            data.append([file_path, size])
 
-    # Iterate over each file/folder and collect the necessary information
-    for item in items:
-        name = item.name
-        size = item.stat().st_size
-        size_prop = size / total_size if total_size > 0 else 0
-
-        data.append([name, size, size_prop])
+        # Calculate the size of each folder
+        for dir in dirs:
+            dir_path = os.path.join(root, dir)
+            try:
+                size = sum(os.path.getsize(os.path.join(dir_path, file)) for file in os.listdir(dir_path))
+                data.append([dir_path, size])
+            except PermissionError:
+                # Skip the folder if permission is denied
+                continue
 
     # Create a pandas DataFrame from the collected data
-    df = pd.DataFrame(data, columns=['name', 'filesize', 'filesize_prop'])
+    df = pd.DataFrame(data, columns=['path', 'filesize'])
 
-    return df
+    # Calculate the total size of all files and folders
+    total_items_size = df['filesize'].sum()
+
+    # Calculate the size proportion for each file/folder
+    df['filesize_prop'] = df['filesize'] / total_items_size
 
 # Sub
 def create_folders(folder: Union[str, Path], 
