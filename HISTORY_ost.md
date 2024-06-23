@@ -1,7 +1,7 @@
 ## 0.1.2
-- Add test files
+- `clean_filename`
 ## 0.1.1
 ### Imported
-- `create_folders`
+- `create_folders`,
 ### Renamed
 - rename all functions to comply with python convension

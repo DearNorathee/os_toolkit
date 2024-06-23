@@ -3,6 +3,20 @@ from pathlib import Path
 
 import os
 
+def clean_filename(ori_name):
+    # update01: deal with '\n' case
+    replace_with_empty = [".","?",":",'"' , "\\" ] 
+    replace_with_space = ["\n", "/" ]
+    
+    new_name = ori_name
+    for delimiter in replace_with_empty:
+        new_name = new_name.replace(delimiter, "")
+        
+    for delimiter in replace_with_space:
+        new_name = new_name.replace(delimiter, " ")
+
+    return new_name
+
 def rename_files_replace_text(folder_path, old_text, new_text, extension=None, case_sensitive=False) -> None:
     import os
     # not tested

@@ -2,6 +2,21 @@ import unittest
 from pathlib import Path
 from os_toolkit.utils_ost import *
 
+def test_clean_filename():
+    name01 = "This has . and ?"
+    name02 = "our colleague/friendship"
+    
+    
+    expect01 = "This has  and "
+    expect02 = "our colleague friendship"
+    
+    actual01 = clean_filename(name01)
+    actual02 = "our colleague friendship"
+    
+    assert actual01 == expect01, f"Not equal 01"
+    # print(actual01)
+    assert actual02 == expect02, f"Not equal 02"
+
 class Test_auto_rename_series(unittest.TestCase):
     path01 = r"H:\D_Video\BigBang Portugues\BigBang PT Season 05_testPython"
     def test_basic01_prefix_no_space(self):
