@@ -3,6 +3,56 @@ from pathlib import Path
 
 import os
 
+def add_suffix_to_name(
+        filepath: Path | str
+        ,suffix:str | float | int
+        ,seperator:str = "_"
+        ):
+    """
+    Add a suffix to a file name before its extension.
+
+    Parameters
+    ----------
+    filepath : Path or str
+        The original file path.
+    suffix : str, float, or int
+        The suffix to add to the file name.
+    separator : str, optional
+        The separator to use between the original file name and the suffix. Default is "_".
+
+    Returns
+    -------
+    Path or str
+        The new file path with the suffix added. Returns a `str` if `filepath` is a `str`, or a `Path` if `filepath` is a `Path`.
+
+    Notes
+    -----
+    - Converts the `filepath` to a string for processing.
+    - Preserves the original file extension.
+    - If `filepath` is a `Path` object, the returned value will also be a `Path` object.
+
+    Examples
+    --------
+    >>> add_suffix_to_name("BigBang FR S02E01.ass", 1)
+    'BigBang FR S02E01_1.ass'
+    >>> from pathlib import Path
+    >>> add_suffix_to_name(Path("video.mp4"), "edited")
+    PosixPath('video_edited.mp4')
+    """
+
+    # tested via extract_sub_1_video
+    from pathlib import Path
+    filepath_str = str(filepath)
+    name, ext = os.path.splitext(filepath_str)
+    new_filename_str = f"{name}{seperator}{str(suffix)}{ext}"
+    new_filename_Path = Path(new_filename_str)
+
+    if isinstance(filepath,str):
+        return new_filename_str
+    else:
+        return new_filename_Path
+
+
 def clean_filename(ori_name):
     # update01: deal with '\n' case
     replace_with_empty = [".","?",":",'"' , "\\" ] 
