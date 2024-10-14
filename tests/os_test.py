@@ -1,6 +1,16 @@
 import unittest
 from pathlib import Path
 from os_toolkit.utils_ost import *
+from os_toolkit.cant_use_ost import *
+
+def test_filesize_in_folder():
+    path01 = r"H:\D_Video\The Ark Season 01 Portuguese\Audio Extracted\English"
+    actual01 = filesize_in_folder(path01)
+    expect01 = []
+
+    path02 = r"H:\D_Video\The Ark Season 01 Portuguese\Audio Extracted"
+    actual02 = filesize_in_folder(path02)
+    print(actual01)
 
 def test_extract_folder_structure():
     root_folder = r"C:\Users\Heng2020\OneDrive\Python MyLib\Python MyLib 01\10 OS\os_toolkit\tests\test_output\test_create_folder_structure"
@@ -156,6 +166,7 @@ def try_auto_rename_series():
 
 if __name__ == '__main__':
     # unittest.main()
+    test_filesize_in_folder()
     test_extract_folder_structure()
     # test_create_folder_structure()
     # try_auto_rename_series()

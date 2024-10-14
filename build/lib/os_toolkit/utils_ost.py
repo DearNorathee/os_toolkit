@@ -1,7 +1,214 @@
-from typing import Literal, Union
+from typing import Literal, Union, Any
 from pathlib import Path
 
-import os
+def extract_folder_structure(
+        root_folder: Path |str) -> dict[Any]:
+    """
+    Extract the structure of a folder as dictionary representation.
+
+    Parameters
+    ----------
+    root_folder : path-like
+        The path to the root folder to extract the structure from.
+
+    Returns
+    -------
+    structure : dict
+        A dictionary with the subfolders as keys and their structures as values.
+        If the subfolders do not have any subfolders, they are represented as a list.
+    """
+    # medium tested
+    # solo from o1 as of Oct 14, 2024
+    import os
+    root_folder = os.path.abspath(root_folder)
+    entries = os.listdir(root_folder)
+    # Get the list of immediate subdirectories
+    subdirs = [entry for entry in entries if os.path.isdir(os.path.join(root_folder, entry))]
+    if not subdirs:
+        # If there are no subdirectories, return None
+        return None
+    else:
+        subdir_structures = {}
+        all_subdirs_none = True
+        for subdir in subdirs:
+            subdir_path = os.path.join(root_folder, subdir)
+            # Recursively extract the structure of each subdirectory
+            subdir_structure = extract_folder_structure(subdir_path)
+            subdir_structures[subdir] = subdir_structure
+            if subdir_structure is not None:
+                all_subdirs_none = False
+        if all_subdirs_none:
+            # If all subdirectories have no further subdirectories, represent them as a list
+            return list(subdir_structures.keys())
+        else:
+            # Otherwise, represent them as a dictionary
+            return subdir_structures
+
+
+def create_folder_structure(
+        root_folder: Path |str, 
+        structure: dict[Any]) -> None:
+    """
+    create folder structure from dictionary
+    allow final level to be a list
+
+    structure_example = {
+    "Portuguese": {
+        "Westworld Portuguese": {
+            "Westworld Portugues 01": None,
+            "Westworld Portugues 02": ["folder1", "folder2"],
+            "Westworld Portugues 03": None,
+            "Westworld Portugues 04": None,
+        },
+        "BigBang Portuguese": [
+            "BigBang PT Season 01",
+            "BigBang PT Season 02",
+            "BigBang PT Season 03",
+            "BigBang PT Season 04",
+            "BigBang PT Season 05",
+            "BigBang PT Season 06",
+            "BigBang PT Season 07",
+            "BigBang PT Season 08",
+            "BigBang PT Season 09",
+            "BigBang PT Season 10",
+            "BigBang PT Season 11",
+        ],
+        "The 100 PT": {
+            "The 100 Season 01 Portuguese": None,
+            "The 100 Season 02 Portuguese": None,
+            "The 100 Season 03 Portuguese": None,
+            "The 100 Season 04 Portuguese": None,
+            "The 100 Season 05 Portuguese": None,
+                        },
+                    }
+                }
+    
+    """
+    import os
+    # medium tested(pass 1 shot)
+    if isinstance(structure, dict):
+        for folder_name, subfolders in structure.items():
+            # Construct the full path for the current folder
+            current_folder = os.path.join(root_folder, folder_name)
+            # Create the current folder if it doesn't exist
+            os.makedirs(current_folder, exist_ok=True)
+            # Recursively create subfolders
+            create_folder_structure(current_folder, subfolders)
+    elif isinstance(structure, list):
+        for folder_name in structure:
+            current_folder = os.path.join(root_folder, folder_name)
+            os.makedirs(current_folder, exist_ok=True)
+            # Since list items are considered final, you can decide whether to allow further nesting
+            # For this example, we'll assume no further nesting
+    elif structure is None:
+        # No subfolders to create
+        pass
+    else:
+        raise ValueError(f"Unsupported structure type: {type(structure)} for {root_folder}")
+
+
+def print_folder_structure(startpath: Path | str, indent='│   ', verbose=1, include_only_folder=False):
+    # by ChatGPT 4o as of Oct, 14, 2024(2-3 attempts)
+    import os
+    result = []  # To store the folder structure as text
+
+    # Convert to Path object if it's a string
+    startpath = Path(startpath) if isinstance(startpath, str) else startpath
+    
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(str(startpath), '').count(os.sep)
+        indent_space = indent * level  # Now using the custom `indent` value for spacing
+        
+        # Sort folder names
+        dirs.sort()
+        folder_name = os.path.basename(root)
+        folder_line = f'{indent_space}├── {folder_name}/'
+        
+        # Add folder line to result
+        result.append(folder_line)
+
+        # Print if verbose >= 1
+        if verbose >= 1:
+            print(folder_line)
+
+        if not include_only_folder:
+            # Sort files and print them in sorted order
+            files.sort()
+            subindent = indent * (level + 1)
+            for f in files:
+                file_line = f'{subindent}├── {f}'
+                result.append(file_line)
+
+                # Print if verbose >= 1
+                if verbose >= 1:
+                    print(file_line)
+
+    # Return the folder structure as text
+    return "\n".join(result)
+
+def add_suffix_to_name(
+        filepath: Path | str
+        ,suffix:str | float | int
+        ,seperator:str = "_"
+        ):
+    """
+    Add a suffix to a file name before its extension.
+
+    Parameters
+    ----------
+    filepath : Path or str
+        The original file path.
+    suffix : str, float, or int
+        The suffix to add to the file name.
+    separator : str, optional
+        The separator to use between the original file name and the suffix. Default is "_".
+
+    Returns
+    -------
+    Path or str
+        The new file path with the suffix added. Returns a `str` if `filepath` is a `str`, or a `Path` if `filepath` is a `Path`.
+
+    Notes
+    -----
+    - Converts the `filepath` to a string for processing.
+    - Preserves the original file extension.
+    - If `filepath` is a `Path` object, the returned value will also be a `Path` object.
+
+    Examples
+    --------
+    >>> add_suffix_to_name("BigBang FR S02E01.ass", 1)
+    'BigBang FR S02E01_1.ass'
+    >>> from pathlib import Path
+    >>> add_suffix_to_name(Path("video.mp4"), "edited")
+    PosixPath('video_edited.mp4')
+    """
+
+    # tested via extract_sub_1_video
+    from pathlib import Path
+    filepath_str = str(filepath)
+    name, ext = os.path.splitext(filepath_str)
+    new_filename_str = f"{name}{seperator}{str(suffix)}{ext}"
+    new_filename_Path = Path(new_filename_str)
+
+    if isinstance(filepath,str):
+        return new_filename_str
+    else:
+        return new_filename_Path
+
+
+def clean_filename(ori_name):
+    # update01: deal with '\n' case
+    replace_with_empty = [".","?",":",'"' , "\\" ] 
+    replace_with_space = ["\n", "/" ]
+    
+    new_name = ori_name
+    for delimiter in replace_with_empty:
+        new_name = new_name.replace(delimiter, "")
+        
+    for delimiter in replace_with_space:
+        new_name = new_name.replace(delimiter, " ")
+
+    return new_name
 
 def rename_files_replace_text(folder_path, old_text, new_text, extension=None, case_sensitive=False) -> None:
     import os

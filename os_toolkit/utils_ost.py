@@ -1,5 +1,82 @@
 from typing import Literal, Union, Any
 from pathlib import Path
+import pandas as pd
+
+def filesize_in_folder(
+        folder_path: Union[str, Path],
+        unit: Literal["byte","KB","MB","GB","TB"] = "KB"
+        ) -> pd.DataFrame:
+    """
+    Calculate the size of files in a folder and their proportion relative to the total size.
+
+    Parameters:
+    - folder_path (str or Path): Path to the folder.
+
+    Returns:
+    - pd.DataFrame: DataFrame with 'filesize' and 'filesize_prop' columns.
+    """
+    # solo from o1 seems pretty accurate medium tested, becareful when check with file system
+    # this reconcile well with WinDirStat
+    
+    if unit in ["byte"]:
+        unit_divider = 1
+    elif unit in ["KB"]:
+        unit_divider = 1000
+    elif unit in ["MB"]:
+        unit_divider = 1000**3
+    elif unit in ["GB"]:
+        unit_divider = 1000**6
+    elif unit in ["TB"]:
+        unit_divider = 1000**9
+
+    folder_path = Path(folder_path)
+    # Get all items in the folder (non-recursive)
+    items = list(folder_path.iterdir())
+    data = []
+    for item in items:
+        if item.is_file():
+            size = item.stat().st_size  # File size in bytes
+            size_scaled = size / unit_divider
+            data.append({'item_name': item.name, 'filesize': size_scaled})
+        elif item.is_dir():
+            # Calculate total size of all files in the directory recursively
+            size = sum(f.stat().st_size for f in item.rglob('*') if f.is_file())
+            size_scaled = size / unit_divider
+            data.append({'item_name': item.name, 'filesize': size_scaled})
+        else:
+            # Handle other file types if necessary
+            data.append({'item_name': item.name, 'filesize': 0})
+    df = pd.DataFrame(data)
+    total_size = df['filesize'].sum()
+    df['filesize_prop'] = df['filesize'] / total_size if total_size > 0 else 0
+
+    return df
+
+def delete_files_in_folder(folder_path: Path|str,verbose = 1):
+    # medium tested
+    import os
+    # Ensure the folder path is a Path object
+    folder_path = Path(folder_path)
+    
+    # Check if the folder exists
+    if not folder_path.exists():
+        raise Exception(f"The path {folder_path} does not exist.")
+
+    
+    # Check if the path is a directory
+    if not folder_path.is_dir():
+        raise Exception(f"The path {folder_path} is not a directory.")
+    
+    # Iterate through files in the directory
+    for filename in os.listdir(folder_path):
+        file_path = folder_path / filename
+        
+        # Check if it's a file and remove it
+        if file_path.is_file():
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Failed to delete {file_path}: {e}")
 
 def extract_folder_structure(
         root_folder: Path |str) -> dict[Any]:
