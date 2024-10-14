@@ -1,18 +1,57 @@
 from typing import Literal, Union, Any
 from pathlib import Path
 
-import os
+def extract_folder_structure(
+        root_folder: Path |str) -> dict[Any]:
+    """
+    Extract the structure of a folder as dictionary representation.
 
-import os
-from pathlib import Path
+    Parameters
+    ----------
+    root_folder : path-like
+        The path to the root folder to extract the structure from.
 
-import os
+    Returns
+    -------
+    structure : dict
+        A dictionary with the subfolders as keys and their structures as values.
+        If the subfolders do not have any subfolders, they are represented as a list.
+    """
+    # medium tested
+    # solo from o1 as of Oct 14, 2024
+    import os
+    root_folder = os.path.abspath(root_folder)
+    entries = os.listdir(root_folder)
+    # Get the list of immediate subdirectories
+    subdirs = [entry for entry in entries if os.path.isdir(os.path.join(root_folder, entry))]
+    if not subdirs:
+        # If there are no subdirectories, return None
+        return None
+    else:
+        subdir_structures = {}
+        all_subdirs_none = True
+        for subdir in subdirs:
+            subdir_path = os.path.join(root_folder, subdir)
+            # Recursively extract the structure of each subdirectory
+            subdir_structure = extract_folder_structure(subdir_path)
+            subdir_structures[subdir] = subdir_structure
+            if subdir_structure is not None:
+                all_subdirs_none = False
+        if all_subdirs_none:
+            # If all subdirectories have no further subdirectories, represent them as a list
+            return list(subdir_structures.keys())
+        else:
+            # Otherwise, represent them as a dictionary
+            return subdir_structures
+
 
 def create_folder_structure(
         root_folder: Path |str, 
-        structure: dict[Any]):
+        structure: dict[Any]) -> None:
     """
     create folder structure from dictionary
+    allow final level to be a list
+
     structure_example = {
     "Portuguese": {
         "Westworld Portuguese": {
@@ -70,7 +109,7 @@ def create_folder_structure(
 
 def print_folder_structure(startpath: Path | str, indent='│   ', verbose=1, include_only_folder=False):
     # by ChatGPT 4o as of Oct, 14, 2024(2-3 attempts)
-
+    import os
     result = []  # To store the folder structure as text
 
     # Convert to Path object if it's a string

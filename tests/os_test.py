@@ -1,6 +1,42 @@
 import unittest
 from pathlib import Path
 from os_toolkit.utils_ost import *
+
+def test_extract_folder_structure():
+    root_folder = r"C:\Users\Heng2020\OneDrive\Python MyLib\Python MyLib 01\10 OS\os_toolkit\tests\test_output\test_create_folder_structure"
+    actual01 = extract_folder_structure(root_folder)
+    expect01 =  {
+    "Portuguese": {
+        "Westworld Portuguese": {
+            "Westworld Portugues 01": None,
+            "Westworld Portugues 02": ["folder1", "folder2"],
+            "Westworld Portugues 03": None,
+            "Westworld Portugues 04": None,
+        },
+        "BigBang Portuguese": [
+            "BigBang PT Season 01",
+            "BigBang PT Season 02",
+            "BigBang PT Season 03",
+            "BigBang PT Season 04",
+            "BigBang PT Season 05",
+            "BigBang PT Season 06",
+            "BigBang PT Season 07",
+            "BigBang PT Season 08",
+            "BigBang PT Season 09",
+            "BigBang PT Season 10",
+            "BigBang PT Season 11",
+        ],
+        "The 100 PT": [
+            "The 100 Season 01 Portuguese",
+            "The 100 Season 02 Portuguese",
+            "The 100 Season 03 Portuguese",
+            "The 100 Season 04 Portuguese",
+            "The 100 Season 05 Portuguese",
+                    ],
+                }
+            }
+    assert actual01 == expect01
+
 def test_create_folder_structure():
     structure = {
     "Portuguese": {
@@ -120,6 +156,7 @@ def try_auto_rename_series():
 
 if __name__ == '__main__':
     # unittest.main()
-    test_create_folder_structure()
+    test_extract_folder_structure()
+    # test_create_folder_structure()
     # try_auto_rename_series()
 
