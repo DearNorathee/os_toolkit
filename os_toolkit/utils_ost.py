@@ -1,7 +1,111 @@
-from typing import Literal, Union
+from typing import Literal, Union, Any
 from pathlib import Path
 
 import os
+
+import os
+from pathlib import Path
+
+import os
+
+def create_folder_structure(
+        root_folder: Path |str, 
+        structure: dict[Any]):
+    """
+    create folder structure from dictionary
+    structure_example = {
+    "Portuguese": {
+        "Westworld Portuguese": {
+            "Westworld Portugues 01": None,
+            "Westworld Portugues 02": ["folder1", "folder2"],
+            "Westworld Portugues 03": None,
+            "Westworld Portugues 04": None,
+        },
+        "BigBang Portuguese": [
+            "BigBang PT Season 01",
+            "BigBang PT Season 02",
+            "BigBang PT Season 03",
+            "BigBang PT Season 04",
+            "BigBang PT Season 05",
+            "BigBang PT Season 06",
+            "BigBang PT Season 07",
+            "BigBang PT Season 08",
+            "BigBang PT Season 09",
+            "BigBang PT Season 10",
+            "BigBang PT Season 11",
+        ],
+        "The 100 PT": {
+            "The 100 Season 01 Portuguese": None,
+            "The 100 Season 02 Portuguese": None,
+            "The 100 Season 03 Portuguese": None,
+            "The 100 Season 04 Portuguese": None,
+            "The 100 Season 05 Portuguese": None,
+                        },
+                    }
+                }
+    
+    """
+    import os
+    # medium tested(pass 1 shot)
+    if isinstance(structure, dict):
+        for folder_name, subfolders in structure.items():
+            # Construct the full path for the current folder
+            current_folder = os.path.join(root_folder, folder_name)
+            # Create the current folder if it doesn't exist
+            os.makedirs(current_folder, exist_ok=True)
+            # Recursively create subfolders
+            create_folder_structure(current_folder, subfolders)
+    elif isinstance(structure, list):
+        for folder_name in structure:
+            current_folder = os.path.join(root_folder, folder_name)
+            os.makedirs(current_folder, exist_ok=True)
+            # Since list items are considered final, you can decide whether to allow further nesting
+            # For this example, we'll assume no further nesting
+    elif structure is None:
+        # No subfolders to create
+        pass
+    else:
+        raise ValueError(f"Unsupported structure type: {type(structure)} for {root_folder}")
+
+
+def print_folder_structure(startpath: Path | str, indent='│   ', verbose=1, include_only_folder=False):
+    # by ChatGPT 4o as of Oct, 14, 2024(2-3 attempts)
+
+    result = []  # To store the folder structure as text
+
+    # Convert to Path object if it's a string
+    startpath = Path(startpath) if isinstance(startpath, str) else startpath
+    
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(str(startpath), '').count(os.sep)
+        indent_space = indent * level  # Now using the custom `indent` value for spacing
+        
+        # Sort folder names
+        dirs.sort()
+        folder_name = os.path.basename(root)
+        folder_line = f'{indent_space}├── {folder_name}/'
+        
+        # Add folder line to result
+        result.append(folder_line)
+
+        # Print if verbose >= 1
+        if verbose >= 1:
+            print(folder_line)
+
+        if not include_only_folder:
+            # Sort files and print them in sorted order
+            files.sort()
+            subindent = indent * (level + 1)
+            for f in files:
+                file_line = f'{subindent}├── {f}'
+                result.append(file_line)
+
+                # Print if verbose >= 1
+                if verbose >= 1:
+                    print(file_line)
+
+    # Return the folder structure as text
+    return "\n".join(result)
 
 def add_suffix_to_name(
         filepath: Path | str

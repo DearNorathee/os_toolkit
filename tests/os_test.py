@@ -1,6 +1,40 @@
 import unittest
 from pathlib import Path
 from os_toolkit.utils_ost import *
+def test_create_folder_structure():
+    structure = {
+    "Portuguese": {
+        "Westworld Portuguese": {
+            "Westworld Portugues 01": None,
+            "Westworld Portugues 02": ["folder1", "folder2"],
+            "Westworld Portugues 03": None,
+            "Westworld Portugues 04": None,
+        },
+        "BigBang Portuguese": [
+            "BigBang PT Season 01",
+            "BigBang PT Season 02",
+            "BigBang PT Season 03",
+            "BigBang PT Season 04",
+            "BigBang PT Season 05",
+            "BigBang PT Season 06",
+            "BigBang PT Season 07",
+            "BigBang PT Season 08",
+            "BigBang PT Season 09",
+            "BigBang PT Season 10",
+            "BigBang PT Season 11",
+        ],
+        "The 100 PT": {
+            "The 100 Season 01 Portuguese": None,
+            "The 100 Season 02 Portuguese": None,
+            "The 100 Season 03 Portuguese": None,
+            "The 100 Season 04 Portuguese": None,
+            "The 100 Season 05 Portuguese": None,
+                    },
+                }
+            }
+
+    root_folder = r"C:\Users\Heng2020\OneDrive\Python MyLib\Python MyLib 01\10 OS\os_toolkit\tests\test_output\test_create_folder_structure"
+    create_folder_structure(root_folder,structure)
 
 def test_clean_filename():
     name01 = "This has . and ?"
@@ -86,6 +120,6 @@ def try_auto_rename_series():
 
 if __name__ == '__main__':
     # unittest.main()
-    # test__auto_rename_series()
-    try_auto_rename_series()
+    test_create_folder_structure()
+    # try_auto_rename_series()
 
