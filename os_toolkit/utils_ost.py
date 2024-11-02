@@ -1,4 +1,4 @@
-from typing import Literal, Union, Any
+from typing import Literal, Union, Any, List
 from pathlib import Path
 import pandas as pd
 
@@ -79,7 +79,7 @@ def delete_files_in_folder(folder_path: Path|str,verbose = 1):
                 print(f"Failed to delete {file_path}: {e}")
 
 def extract_folder_structure(
-        root_folder: Path |str) -> dict[Any]:
+        root_folder: Path |str) -> dict[Any, Any] | None | List:
     """
     Extract the structure of a folder as dictionary representation.
 
@@ -124,7 +124,7 @@ def extract_folder_structure(
 
 def create_folder_structure(
         root_folder: Path |str, 
-        structure: dict[Any]) -> None:
+        structure: dict[Any,Any]) -> None:
     """
     create folder structure from dictionary
     allow final level to be a list
@@ -228,6 +228,7 @@ def add_suffix_to_name(
         ,suffix:str | float | int
         ,seperator:str = "_"
         ):
+    import os
     """
     Add a suffix to a file name before its extension.
 
@@ -411,7 +412,7 @@ def extract_filename(file_path: Union[list[str], list[Path] ,str, Path],
         return name_no_ext_list
 
 
-def get_filename(folder_path,extension = "all"):
+def get_filename(folder_path,extension: Union[str, List[str]] = "all") -> Union[List[str], List[str]]:
     import os
     """ 
     get all of filename that has 
@@ -460,7 +461,7 @@ def get_filename(folder_path,extension = "all"):
 
     return out_list
 
-def get_full_filename(folder_path,extension = "all"):
+def get_full_filename(folder_path,extension: Union[str, List[str]] = "all"):
     import os
     # tested small
     short_names = get_filename(folder_path,extension)
@@ -472,7 +473,11 @@ def get_full_filename(folder_path,extension = "all"):
 
 
 
-def os_add_extension(ori_path, added_extension, inplace = True):
+def os_add_extension(
+        ori_path: List[str]       
+        ,added_extension:str
+        ,inplace:bool = True
+        ):
     # still doesn't work
     # still can't modify the text direclty
     # imported from "C:\Users\Heng2020\OneDrive\Python NLP\NLP 05_UsefulSenLabel\sen_useful_GPT01.py"
