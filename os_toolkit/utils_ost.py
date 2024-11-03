@@ -71,12 +71,11 @@ def delete_files_in_folder(folder_path: Path|str,verbose = 1):
     for filename in os.listdir(folder_path):
         file_path = folder_path / filename
         
-        # Check if it's a file and remove it
-        if file_path.is_file():
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                print(f"Failed to delete {file_path}: {e}")
+        # removing checking files
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"Failed to delete {file_path}: {e}")
 
 def extract_folder_structure(
         root_folder: Path |str) -> dict[Any, Any] | None | List:
