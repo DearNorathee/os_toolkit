@@ -60,12 +60,12 @@ def delete_files_in_folder(folder_path: Path|str,verbose = 1):
     
     # Check if the folder exists
     if not folder_path.exists():
-        raise Exception(f"The path {folder_path} does not exist.")
+        raise OSError(f"The path {folder_path} does not exist.")
 
     
     # Check if the path is a directory
     if not folder_path.is_dir():
-        raise Exception(f"The path {folder_path} is not a directory.")
+        raise OSError(f"The path {folder_path} is not a directory.")
     
     # Iterate through files in the directory
     for filename in os.listdir(folder_path):
