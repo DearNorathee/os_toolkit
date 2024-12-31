@@ -2,6 +2,45 @@ from typing import Literal, Union, Any, List
 from pathlib import Path
 import pandas as pd
 
+def create_zipfile(filepath: Union[str, Path]) -> None:
+    import shutil
+    import os
+    """
+    Create a zip file for all files and folders under the specified directory.
+
+    Parameters:
+    ----------
+    filepath : Union[str, Path]
+        The path to the directory whose contents will be zipped. This can be provided as either
+        a string or a Path object.
+
+    Raises:
+    ------
+    OSError
+        If the specified directory does not exist or if there is an error creating the zip file.
+
+    Example:
+    --------
+    To create a zip file for the contents of a directory:
+    
+    ```python
+    create_zipfile('/mnt/N1603499/Project 10_TH_GLM_Drift/TH_Drift_Result/Sev_TP')
+    ```
+    """
+    # Convert filepath to Path if it's a string
+    if isinstance(filepath, str):
+        filepath = Path(filepath)
+
+    # Check if the specified directory exists
+    if not filepath.is_dir():
+        raise OSError(f"The specified directory '{filepath}' does not exist.")
+
+    # Define the output zip file path in the same directory
+    output_zip = filepath.parent / (filepath.name + '.zip')
+
+    # Create a zip file from the source directory
+    shutil.make_archive(str(output_zip).replace('.zip', ''), 'zip', str(filepath))
+
 def filesize_in_folder(
         folder_path: Union[str, Path],
         unit: Literal["byte","KB","MB","GB","TB"] = "KB"
