@@ -1,6 +1,45 @@
-from typing import Literal, Union, Any
+from typing import Literal, Union, Any, List
 from pathlib import Path
 import pandas as pd
+
+def create_zipfile(filepath: Union[str, Path]) -> None:
+    import shutil
+    import os
+    """
+    Create a zip file for all files and folders under the specified directory.
+
+    Parameters:
+    ----------
+    filepath : Union[str, Path]
+        The path to the directory whose contents will be zipped. This can be provided as either
+        a string or a Path object.
+
+    Raises:
+    ------
+    OSError
+        If the specified directory does not exist or if there is an error creating the zip file.
+
+    Example:
+    --------
+    To create a zip file for the contents of a directory:
+    
+    ```python
+    create_zipfile('/mnt/N1603499/Project 10_TH_GLM_Drift/TH_Drift_Result/Sev_TP')
+    ```
+    """
+    # Convert filepath to Path if it's a string
+    if isinstance(filepath, str):
+        filepath = Path(filepath)
+
+    # Check if the specified directory exists
+    if not filepath.is_dir():
+        raise OSError(f"The specified directory '{filepath}' does not exist.")
+
+    # Define the output zip file path in the same directory
+    output_zip = filepath.parent / (filepath.name + '.zip')
+
+    # Create a zip file from the source directory
+    shutil.make_archive(str(output_zip).replace('.zip', ''), 'zip', str(filepath))
 
 def filesize_in_folder(
         folder_path: Union[str, Path],
@@ -60,26 +99,25 @@ def delete_files_in_folder(folder_path: Path|str,verbose = 1):
     
     # Check if the folder exists
     if not folder_path.exists():
-        raise Exception(f"The path {folder_path} does not exist.")
+        raise OSError(f"The path {folder_path} does not exist.")
 
     
     # Check if the path is a directory
     if not folder_path.is_dir():
-        raise Exception(f"The path {folder_path} is not a directory.")
+        raise OSError(f"The path {folder_path} is not a directory.")
     
     # Iterate through files in the directory
     for filename in os.listdir(folder_path):
         file_path = folder_path / filename
         
-        # Check if it's a file and remove it
-        if file_path.is_file():
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                print(f"Failed to delete {file_path}: {e}")
+        # removing checking files
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"Failed to delete {file_path}: {e}")
 
 def extract_folder_structure(
-        root_folder: Path |str) -> dict[Any]:
+        root_folder: Path |str) -> dict[Any, Any] | None | List:
     """
     Extract the structure of a folder as dictionary representation.
 
@@ -124,7 +162,7 @@ def extract_folder_structure(
 
 def create_folder_structure(
         root_folder: Path |str, 
-        structure: dict[Any]) -> None:
+        structure: dict[Any,Any]) -> None:
     """
     create folder structure from dictionary
     allow final level to be a list
@@ -228,6 +266,7 @@ def add_suffix_to_name(
         ,suffix:str | float | int
         ,seperator:str = "_"
         ):
+    import os
     """
     Add a suffix to a file name before its extension.
 
@@ -411,7 +450,7 @@ def extract_filename(file_path: Union[list[str], list[Path] ,str, Path],
         return name_no_ext_list
 
 
-def get_filename(folder_path,extension = "all"):
+def get_filename(folder_path,extension: Union[str, List[str]] = "all") -> Union[List[str], List[str]]:
     import os
     """ 
     get all of filename that has 
@@ -460,7 +499,7 @@ def get_filename(folder_path,extension = "all"):
 
     return out_list
 
-def get_full_filename(folder_path,extension = "all"):
+def get_full_filename(folder_path,extension: Union[str, List[str]] = "all"):
     import os
     # tested small
     short_names = get_filename(folder_path,extension)
@@ -472,7 +511,11 @@ def get_full_filename(folder_path,extension = "all"):
 
 
 
-def os_add_extension(ori_path, added_extension, inplace = True):
+def os_add_extension(
+        ori_path: List[str]       
+        ,added_extension:str
+        ,inplace:bool = True
+        ):
     # still doesn't work
     # still can't modify the text direclty
     # imported from "C:\Users\Heng2020\OneDrive\Python NLP\NLP 05_UsefulSenLabel\sen_useful_GPT01.py"
