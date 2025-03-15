@@ -3,6 +3,76 @@ from pathlib import Path
 from os_toolkit.utils_ost import *
 from os_toolkit.cant_use_ost import *
 
+
+def test_is_online_file():
+    # all of paths in path01 is online(onedrive only)
+    path01 = [r"C:\Users\Heng2020\OneDrive\D_Documents\TestVBA 01.xlsm"
+              ,r"C:\Users\Heng2020\OneDrive\D_Documents\VBA LibFile Work V07.01.xlsb"
+              ,r"C:\Users\Heng2020\OneDrive\D_Documents\VBA LibFile V07.01.xlsb"
+              ]
+    # all of paths in path01 is offline
+    path02 = [
+        r"C:\Users\Heng2020\OneDrive\D_Documents\Dear_VSCode_Profile_v01.code-profile"
+        ,r"C:\Users\Heng2020\OneDrive\D_Documents\_Music Related\12 Major Scales.jpg"
+        ,r"H:\H_Video\BigBang Portugues\BigBang PT Season 03\BigBang PT S03E01.mkv"
+        ]
+    
+    # all of paths in path01 is online(gdrive only)
+    path03 = [
+        r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E01.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E02.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E03.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E04.srt"
+        ]
+    
+    actual_list01 = []
+    actual_list02 = []
+    
+    actual_list01 = is_online_file(path01)
+    actual_list02 = [not(x) for x in is_online_file(path02)]
+    actual_list03 = is_online_file(path03)
+        
+    actual01 = all(actual_list01)
+    actual02 = all(actual_list02)
+    actual03 = all(actual_list03)
+    
+    assert actual01 is True
+    assert actual02 is True
+    assert actual03 is True
+
+def test_identify_cloud_file():
+    # all of paths in path01 is online(onedrive only)
+    path01 = [r"C:\Users\Heng2020\OneDrive\D_Documents\TestVBA 01.xlsm"
+              ,r"C:\Users\Heng2020\OneDrive\D_Documents\VBA LibFile Work V07.01.xlsb"
+              ,r"C:\Users\Heng2020\OneDrive\D_Documents\VBA LibFile V07.01.xlsb"
+              ]
+    # all of paths in path01 is offline
+    path02 = [
+        r"C:\Users\Heng2020\OneDrive\D_Documents\Dear_VSCode_Profile_v01.code-profile"
+        ,r"C:\Users\Heng2020\OneDrive\D_Documents\_Music Related\12 Major Scales.jpg"
+        ,r"H:\H_Video\BigBang Portugues\BigBang PT Season 03\BigBang PT S03E01.mkv"
+        ]
+    
+    # all of paths in path01 is online(gdrive only)
+    path03 = [
+        r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E01.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E02.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E03.mkv"
+        ,r"G:\My Drive\G_Videos\Portuguese\The 100 PT\The 100 Season 02 Portuguese\The 100 PT_S02E04.srt"
+        ]
+    
+    actual_list01 = identify_cloud_file(path01)
+    actual_list02 = identify_cloud_file(path02)
+    actual_list03 = identify_cloud_file(path03)
+    
+    actual01 = set(actual_list01)
+    actual02 = set(actual_list02)
+    actual03 = set(actual_list03)
+    
+    assert actual01 == {"online_onedrive"}
+    assert actual02 == {"offline"}
+    assert actual03 == {"online_gdrive"}
+
 def test_filesize_in_folder():
     path01 = r"H:\D_Video\The Ark Season 01 Portuguese\Audio Extracted\English"
     actual01 = filesize_in_folder(path01)

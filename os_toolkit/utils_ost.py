@@ -2,6 +2,86 @@ from typing import Literal, Union, Any, List
 from pathlib import Path
 import pandas as pd
 
+
+def is_online_file(file_paths: Union[Path, list[Path]]) -> Union[bool, list[bool]]:
+    """
+    Determine if file(s) are stored online-only (i.e. OneDrive placeholders).
+    
+    Parameters:
+      file_paths (Path or list of Path): A single file path or a list of file paths.
+      
+    Returns:
+      bool or list of bool: Returns a single boolean if a single path is provided,
+      or a list of booleans for a list of paths.
+    """
+    # medium tested
+    def _is_online_single(file_path: Path) -> bool:
+        import ctypes
+        """
+        Determine if a single file is stored online-only (i.e. a OneDrive placeholder)
+        by checking its Windows file attributes.
+
+        Parameters:
+          file_path (Path): The path to the file.
+
+        Returns:
+          bool: True if the file is online-only, otherwise False.
+        """
+        cloud_label = identify_cloud_file(file_path)
+        if cloud_label in ["online_gdrive","online_onedrive"]:
+            return True
+        elif cloud_label in ["offline"]:
+            return False
+    
+    if isinstance(file_paths, list):
+        return [_is_online_single(path) for path in file_paths]
+    else:
+        return _is_online_single(file_paths)
+
+def identify_cloud_file(file_paths: Union[Path, list[Path]]) -> Union[list[Literal["offline","online_onedrive","online_gdrive"]],Literal["offline","online_onedrive","online_gdrive"]]:
+    
+    """
+    Identify if a file is stored online-only and indicate the cloud provider.
+    
+    Returns:
+      - "online_gdrive": if the file has the FILE_ATTRIBUTE_OFFLINE flag (commonly set by Google Drive).
+      - "online_onedrive": if the file has FILE_ATTRIBUTE_VIRTUAL or FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS flags (commonly set by OneDrive).
+      - "offline": if none of the online-only attributes are present or if attributes cannot be retrieved.
+    """
+    # medium tested
+    # took about 30 min
+    def _identify_cloud_file_single(file_path: Path) -> Literal["offline", "online_onedrive", "online_gdrive"]:
+        import ctypes
+        
+        # Windows file attribute constants:
+        FILE_ATTRIBUTE_VIRTUAL = 0x00010000
+        FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x400000
+        FILE_ATTRIBUTE_OFFLINE = 0x00001000
+        INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
+
+        file_path_str = str(file_path)
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(file_path_str)
+        if attrs == INVALID_FILE_ATTRIBUTES:
+            # If the attributes can't be retrieved, assume offline.
+            return "offline"
+        
+        # Check for Google Drive online-only flag.
+        # attrs 128 seems to be associated with online gdrive()
+        if attrs in [128]:
+            return "online_gdrive"
+        
+        # Check for OneDrive online-only flags.
+        if attrs & (FILE_ATTRIBUTE_VIRTUAL | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS):
+            return "online_onedrive"
+        
+        return "offline"
+    
+    if isinstance(file_paths, list):
+        return [_identify_cloud_file_single(path) for path in file_paths]
+    else:
+        return _identify_cloud_file_single(file_paths)
+
+
 def create_zipfile(filepath: Union[str, Path]) -> None:
     import shutil
     import os
