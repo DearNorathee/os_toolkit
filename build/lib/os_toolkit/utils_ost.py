@@ -1,6 +1,89 @@
-from typing import Literal, Union, Any, List
+from typing import Literal, Union, Any, List, Tuple
 from pathlib import Path
 import pandas as pd
+
+
+def is_online_file(file_paths: Union[Path,str, list[Path|str]]) -> Union[bool, list[bool]]:
+    """
+    Determine if file(s) are stored online-only (i.e. OneDrive placeholders).
+    
+    Parameters:
+      file_paths (Path or list of Path): A single file path or a list of file paths.
+      
+    Returns:
+      bool or list of bool: Returns a single boolean if a single path is provided,
+      or a list of booleans for a list of paths.
+    """
+    # medium tested
+    def _is_online_single(file_path: Path|str) -> bool:
+        import ctypes
+        """
+        Determine if a single file is stored online-only (i.e. a OneDrive placeholder)
+        by checking its Windows file attributes.
+
+        Parameters:
+          file_path (Path): The path to the file.
+
+        Returns:
+          bool: True if the file is online-only, otherwise False.
+        """
+        cloud_label = identify_cloud_file(file_path)
+        if cloud_label in ["online_gdrive","online_onedrive"]:
+            return True
+        elif cloud_label in ["offline"]:
+            return False
+    
+    if isinstance(file_paths, list):
+        return [_is_online_single(path) for path in file_paths]
+    else:
+        return _is_online_single(file_paths)
+
+def identify_cloud_file(file_paths: Union[str, Path, list[Path|str]]) -> Union[list[Literal["offline","online_onedrive","online_gdrive"]],Literal["offline","online_onedrive","online_gdrive"]]:
+    
+    """
+    Identify if a file is stored online-only and indicate the cloud provider.
+    
+    Returns:
+      - "online_gdrive": if the file has the FILE_ATTRIBUTE_OFFLINE flag (commonly set by Google Drive).
+      - "online_onedrive": if the file has FILE_ATTRIBUTE_VIRTUAL or FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS flags (commonly set by OneDrive).
+      - "offline": if none of the online-only attributes are present or if attributes cannot be retrieved.
+    """
+    # medium tested
+    # this is still not correct in gdrive because attrs of files in gdrive would be the same whether it's online or offline
+    # So for this function I'm going to assume every file in gdrive is online(for now)
+    # took about 30 min
+    # hard to LLM
+    def _identify_cloud_file_single(file_path: Path) -> Literal["offline", "online_onedrive", "online_gdrive"]:
+        import ctypes
+        
+        # Windows file attribute constants:
+        FILE_ATTRIBUTE_VIRTUAL = 0x00010000
+        FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x400000
+        FILE_ATTRIBUTE_OFFLINE = 0x00001000
+        INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF
+
+        file_path_str = str(file_path)
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(file_path_str)
+        if attrs == INVALID_FILE_ATTRIBUTES:
+            # If the attributes can't be retrieved, assume offline.
+            return "offline"
+        
+        # Check for Google Drive online-only flag.
+        # attrs 128 seems to be associated with online&offline gdrive()
+        if attrs in [128]:
+            return "online_gdrive"
+        
+        # Check for OneDrive online-only flags.
+        if attrs & (FILE_ATTRIBUTE_VIRTUAL | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS):
+            return "online_onedrive"
+        
+        return "offline"
+    
+    if isinstance(file_paths, list):
+        return [_identify_cloud_file_single(path) for path in file_paths]
+    else:
+        return _identify_cloud_file_single(file_paths)
+
 
 def create_zipfile(filepath: Union[str, Path]) -> None:
     import shutil
@@ -41,78 +124,178 @@ def create_zipfile(filepath: Union[str, Path]) -> None:
     # Create a zip file from the source directory
     shutil.make_archive(str(output_zip).replace('.zip', ''), 'zip', str(filepath))
 
-def filesize_in_folder(
-        folder_path: Union[str, Path],
-        unit: Literal["byte","KB","MB","GB","TB"] = "KB"
-        ) -> pd.DataFrame:
-    """
-    Calculate the size of files in a folder and their proportion relative to the total size.
+# def filesize_in_folder(
+#         folder_path: Union[str, Path],
+#         unit: Literal["byte","KB","MB","GB","TB"] = "KB"
+#         ) -> pd.DataFrame:
+#     """
+#     Calculate the size of files in a folder and their proportion relative to the total size.
 
-    Parameters:
-    - folder_path (str or Path): Path to the folder.
+#     Parameters:
+#     - folder_path (str or Path): Path to the folder.
 
-    Returns:
-    - pd.DataFrame: DataFrame with 'filesize' and 'filesize_prop' columns.
-    """
-    # solo from o1 seems pretty accurate medium tested, becareful when check with file system
-    # this reconcile well with WinDirStat
+#     Returns:
+#     - pd.DataFrame: DataFrame with 'filesize' and 'filesize_prop' columns.
+#     """
+#     # solo from o1 seems pretty accurate medium tested, becareful when check with file system
+#     # this reconcile well with WinDirStat
     
-    if unit in ["byte"]:
-        unit_divider = 1
-    elif unit in ["KB"]:
-        unit_divider = 1000
-    elif unit in ["MB"]:
-        unit_divider = 1000**3
-    elif unit in ["GB"]:
-        unit_divider = 1000**6
-    elif unit in ["TB"]:
-        unit_divider = 1000**9
+#     if unit in ["byte"]:
+#         unit_divider = 1
+#     elif unit in ["KB"]:
+#         unit_divider = 1000
+#     elif unit in ["MB"]:
+#         unit_divider = 1000**3
+#     elif unit in ["GB"]:
+#         unit_divider = 1000**6
+#     elif unit in ["TB"]:
+#         unit_divider = 1000**9
 
+#     folder_path = Path(folder_path)
+#     # Get all items in the folder (non-recursive)
+#     items = list(folder_path.iterdir())
+#     data = []
+#     for item in items:
+#         if item.is_file():
+#             size = item.stat().st_size  # File size in bytes
+#             size_scaled = size / unit_divider
+#             data.append({'item_name': item.name, 'filesize': size_scaled})
+#         elif item.is_dir():
+#             # Calculate total size of all files in the directory recursively
+#             size = sum(f.stat().st_size for f in item.rglob('*') if f.is_file())
+#             size_scaled = size / unit_divider
+#             data.append({'item_name': item.name, 'filesize': size_scaled})
+#         else:
+#             # Handle other file types if necessary
+#             data.append({'item_name': item.name, 'filesize': 0})
+#     df = pd.DataFrame(data)
+#     total_size = df['filesize'].sum()
+#     df['filesize_prop'] = df['filesize'] / total_size if total_size > 0 else 0
+
+#     return df
+
+def filesize_in_folder(
+    folder_path: Union[str, Path],
+    unit: Literal["byte", "KB", "MB", "GB", "TB"] = "KB"
+    ,progress_bar:bool = True
+) -> pd.DataFrame:
+    from tqdm import tqdm
+    import warnings
+    """
+    Calculate file sizes in a folder, distinguishing between offline and online files.
+    
+    Parameters:
+      - folder_path: Path to the folder.
+      - unit: Unit for file sizes ("byte", "KB", "MB", "GB", "TB").
+    
+    Returns:
+      - pd.DataFrame: DataFrame with columns 'item_name', 'filesize_offline', 
+        'filesize_online', and 'filesize_total' (offline + online).
+    """
+    # Define unit divider based on standard unit conversions
+
+    # the result is still wrong because it detect and assign the memory usuage based on only folder status(not the status of files in the folder)
+    # TOFIX01: cloud calculation detail !!!!
+    def _get_file_sizes_H1(item: Path, unit_divider: int) -> Tuple[float, float,float]:
+        """
+        Recursively calculate offline and online file sizes for a given item.
+        
+        Returns:
+        - Tuple (offline_size, online_size) in the desired unit.
+        """
+        offline, online_onedrive, online_gdrive    = 0.0, 0.0, 0.0
+        try:
+            if item.is_file():
+                size = item.stat().st_size
+                
+                if identify_cloud_file(item) in ["online_onedrive"]:
+                    online_onedrive += size / unit_divider
+                elif identify_cloud_file(item) in ["offline"]:
+                    offline += size / unit_divider
+                elif identify_cloud_file(item) in ["online_gdrive"]:
+                    online_gdrive += size / unit_divider
+    
+    
+            elif item.is_dir():
+                # For directories, traverse recursively
+                for f in item.rglob('*'):
+                    if f.is_file():
+                        size = f.stat().st_size
+                        if identify_cloud_file(f) in ["online_onedrive"]:
+                            online_onedrive += size / unit_divider
+                        elif identify_cloud_file(f) in ["offline"]:
+                            offline += size / unit_divider
+                        elif identify_cloud_file(f) in ["online_gdrive"]:
+                            online_gdrive += size / unit_divider
+        except OSError:
+            warnings.warn(f"{item}\n This path contains virus so skipping this file size.")
+            return (0, 0, 0)
+            
+        return (offline, online_onedrive, online_gdrive)
+
+    if unit == "byte":
+        unit_divider = 1
+    elif unit == "KB":
+        unit_divider = 1000
+    elif unit == "MB":
+        unit_divider = 1000**2
+    elif unit == "GB":
+        unit_divider = 1000**3
+    elif unit == "TB":
+        unit_divider = 1000**4
+    else:
+        raise ValueError("Unsupported unit")
+    
     folder_path = Path(folder_path)
-    # Get all items in the folder (non-recursive)
     items = list(folder_path.iterdir())
     data = []
-    for item in items:
-        if item.is_file():
-            size = item.stat().st_size  # File size in bytes
-            size_scaled = size / unit_divider
-            data.append({'item_name': item.name, 'filesize': size_scaled})
-        elif item.is_dir():
-            # Calculate total size of all files in the directory recursively
-            size = sum(f.stat().st_size for f in item.rglob('*') if f.is_file())
-            size_scaled = size / unit_divider
-            data.append({'item_name': item.name, 'filesize': size_scaled})
-        else:
-            # Handle other file types if necessary
-            data.append({'item_name': item.name, 'filesize': 0})
-    df = pd.DataFrame(data)
-    total_size = df['filesize'].sum()
-    df['filesize_prop'] = df['filesize'] / total_size if total_size > 0 else 0
+    if progress_bar:
+        loop_obj = tqdm(items)
+    else:
+        loop_obj = items
 
+    for item in loop_obj:
+        offline, online_onedrive, online_gdrive = _get_file_sizes_H1(item, unit_divider)
+        total = offline + online_onedrive + online_gdrive
+        data.append({
+            'item_name': item.name,
+            'filesize_offline': offline,
+            'filesize_onedrive':online_onedrive,
+            'filesize_gdrive':online_gdrive,
+            'filesize_online': online_onedrive + online_gdrive,
+            'filesize_total': total
+        })
+    
+    df = pd.DataFrame(data)
     return df
 
-def delete_files_in_folder(folder_path: Path|str,verbose = 1):
+
+def delete_files_in_folder(folder_path: Path | str, verbose=1, go_to_recycle_bin: bool = True):
     # medium tested
     import os
-    # Ensure the folder path is a Path object
+    from pathlib import Path
+
+    if go_to_recycle_bin:
+        from send2trash import send2trash
+
     folder_path = Path(folder_path)
-    
-    # Check if the folder exists
+
     if not folder_path.exists():
         raise OSError(f"The path {folder_path} does not exist.")
 
-    
-    # Check if the path is a directory
     if not folder_path.is_dir():
         raise OSError(f"The path {folder_path} is not a directory.")
-    
-    # Iterate through files in the directory
+
     for filename in os.listdir(folder_path):
         file_path = folder_path / filename
-        
-        # removing checking files
+
         try:
-            os.remove(file_path)
+            if go_to_recycle_bin:
+                send2trash(str(file_path))
+            else:
+                os.remove(file_path)
+            if verbose:
+                print(f"Deleted: {file_path}")
         except Exception as e:
             print(f"Failed to delete {file_path}: {e}")
 
