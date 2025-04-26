@@ -3,6 +3,13 @@ from pathlib import Path
 from os_toolkit.utils_ost import *
 from os_toolkit.cant_use_ost import *
 
+def test_new_filepath():
+    old_filepath = r"C:\C_Video_Python\The Big Bang Theory\BigBang Theory Season 02\Season 02 Subtitle\French_whisper_base\BigBang FR S02E01_FR.srt"
+    output_folder = r"C:\Users\Norat\OneDrive\Python MyLib\Python MyLib 01_test"
+
+    actual01 = new_filepath(old_filepath,output_folder,"prefix","suffix",return_type=str)
+    expect01 = r"C:\Users\Norat\OneDrive\Python MyLib\Python MyLib 01_test\prefix_BigBang FR S02E01_FR_suffix.srt"
+    # assert new_filepath == r"C:\Users\Heng2020\OneDrive\D_Documents\TestVBA 01.xlsmnew_.xlsm"
 
 def test_is_online_file():
     # all of paths in path01 is online(onedrive only)
@@ -236,8 +243,9 @@ def try_auto_rename_series():
 
 if __name__ == '__main__':
     # unittest.main()
-    test_filesize_in_folder()
-    test_extract_folder_structure()
+    test_new_filepath()
+    # test_filesize_in_folder()
+    # test_extract_folder_structure()
     # test_create_folder_structure()
     # try_auto_rename_series()
 

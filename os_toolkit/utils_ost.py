@@ -1,6 +1,47 @@
-from typing import Literal, Union, Any, List, Tuple
+from typing import Literal, Union, Any, List, Tuple, Type
 from pathlib import Path
 import pandas as pd
+
+def new_filepath(
+    old_filepath: Union[str, Path],
+    output_folder: Union[str, Path],
+    prefix: str = "",
+    suffix: str = "",
+    seperator:str = "_"
+    ,return_type: Type = Path
+) -> Union[str, Path]:
+    """
+    Build a new filepath in a different folder, with optional prefix/suffix, and return as Path or str.
+
+    Parameters
+    ----------
+    old_filepath : str or Path
+        Original file path.
+    output_folder : str or Path
+        Folder in which to place the new file.
+    prefix : str, optional
+        String to prepend to the original filename (default is "").
+    suffix : str, optional
+        String to append to the original filename (before extension) (default is "").
+    return_type : type, default Path
+        If Path, returns a pathlib.Path; if str, returns a string.
+
+    Returns
+    -------
+    Path or str
+        The new file path, in the desired type.
+    """
+    from pathlib import Path
+
+    old = Path(old_filepath)
+    folder = Path(output_folder)
+    stem = old.stem
+    ext = old.suffix
+
+    new_name = f"{prefix}{seperator}{stem}{seperator}{suffix}{ext}"
+    new_path = folder / new_name
+
+    return str(new_path) if return_type is str else new_path
 
 
 def is_online_file(file_paths: Union[Path,str, list[Path|str]]) -> Union[bool, list[bool]]:
