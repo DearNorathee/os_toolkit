@@ -41,7 +41,7 @@ def new_filepath(
     stem = old.stem
     ext = old.suffix
 
-    new_name = f"{prefix}{seperator}{stem}{seperator}{suffix}{ext}"
+    new_name = new_filename(old_filepath,prefix=prefix, suffix = suffix, seperator=seperator)
     new_path = folder / new_name
 
     return str(new_path) if return_type is str else new_path
@@ -83,7 +83,17 @@ def new_filename(
     stem = old.stem
     ext = old.suffix
 
-    new_name = f"{prefix}{seperator}{stem}{seperator}{suffix}{ext}"
+    if prefix == "":
+        if suffix == "":
+            new_name = f"{stem}{ext}"
+        else:
+            new_name = f"{stem}{seperator}{suffix}{ext}"
+    else:
+        if suffix == "":
+            new_name = f"{prefix}{seperator}{stem}{ext}"
+        else:
+            new_name = f"{prefix}{seperator}{stem}{seperator}{suffix}{ext}"
+
     return new_name
 
 
