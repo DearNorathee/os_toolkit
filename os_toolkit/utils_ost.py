@@ -2,6 +2,10 @@ from typing import Literal, Union, Any, List, Tuple, Type
 from pathlib import Path
 import pandas as pd
 
+VIDEO_ALL_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mts", ".m2ts"]
+SUBTITLE_ALL_EXTENSIONS = [".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"]
+AUDIO_ALL_EXTENSIONS = [".mp3", ".aac", ".wav", ".flac", ".alac", ".ogg", ".wma", ".m4a", ".aiff"]
+
 def new_filepath(
     old_filepath: Union[str, Path],
     output_folder: Union[str, Path],
@@ -654,10 +658,10 @@ def auto_rename_series(folder_path,prefix, suffix = "", pattern = r'[sS]\d\d[eE]
     import re
     import os
     
-    video_path_list = get_full_filename(folder_path,[".mp4",".mkv"])
-    video_name_list = get_filename(folder_path,[".mp4",".mkv"])
-    subtitle_path_list = get_full_filename(folder_path,[".srt",".ass"])
-    subtitle_name_list = get_filename(folder_path,[".srt",".ass"])
+    video_path_list = get_full_filename(folder_path,video_extensions = VIDEO_ALL_EXTENSIONS)
+    video_name_list = get_filename(folder_path,video_extensions = VIDEO_ALL_EXTENSIONS)
+    subtitle_path_list = get_full_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
+    subtitle_name_list = get_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
     
     for i, filename in enumerate(video_name_list):
         episode = re.findall(pattern, filename)
