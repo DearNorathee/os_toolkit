@@ -6,6 +6,64 @@ VIDEO_ALL_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
 SUBTITLE_ALL_EXTENSIONS = [".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"]
 AUDIO_ALL_EXTENSIONS = [".mp3", ".aac", ".wav", ".flac", ".alac", ".ogg", ".wma", ".m4a", ".aiff"]
 
+def get_folders_name(parent_path: str| Path) -> list[str]:
+    
+    """
+    Return a list of folder names contained directly within the given parent directory.
+
+    Parameters:
+    -----------
+    parent_path : str or Path
+        The path to the parent directory in which to look for subfolders.
+
+    Returns:
+    --------
+    List[str]
+        A list of folder names (not full paths) for every directory found inside parent_path.
+    """
+    
+    # medium tested
+    parent = Path(parent_path)
+    if not parent.is_dir():
+        raise ValueError(f"Provided path does not exist or is not a directory: {parent}")
+
+    folder_names: list[str] = []
+    for child in parent.iterdir():
+        if child.is_dir():
+            folder_names.append(child.name)
+
+    return folder_names
+
+def get_folders_path(parent_path: str| Path,return_type:Type = str) -> list[Path]:
+    """
+    Return a list of full folder paths for all directories directly within the given parent directory.
+
+    Parameters:
+    -----------
+    parent_path : str or Path
+        The path to the parent directory in which to look for subfolders.
+
+    Returns:
+    --------
+    List[Path]
+        A list of Path objects pointing to each directory found inside parent_path.
+    """
+    
+    # medium tested
+    parent = Path(parent_path)
+    if not parent.is_dir():
+        raise ValueError(f"Provided path does not exist or is not a directory: {parent}")
+
+    folder_paths: list[Path] = []
+    for child in parent.iterdir():
+        if child.is_dir():
+            if return_type in [Path]:
+                folder_paths.append(child)
+            elif return_type in [str]: 
+                folder_paths.append(str(child))
+
+    return folder_paths
+
 def new_filepath(
     old_filepath: Union[str, Path],
     output_folder: Union[str, Path],

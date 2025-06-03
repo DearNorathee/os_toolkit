@@ -3,6 +3,28 @@ from pathlib import Path
 from os_toolkit.utils_ost import *
 from os_toolkit.cant_use_ost import *
 
+def test_get_folders_name():
+    input_path01 = r"C:\DVDFab\StreamFab\Output\Netflix\The Big Bang Theory"
+    actual01 = get_folders_name(input_path01)
+    expect01 = ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'S11', 'S12']
+    assert actual01 == expect01
+
+def test_get_folders_path():
+    input_path01 = r"C:\DVDFab\StreamFab\Output\Netflix\The Big Bang Theory"
+    actual01 = get_folders_path(input_path01)
+    expect01 = ['C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S01'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S02'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S03'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S04'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S05'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S06'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S07'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S08'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S09'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S10'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S11'
+                , 'C:\\DVDFab\\StreamFab\\Output\\Netflix\\The Big Bang Theory\\S12']
+    assert actual01 == expect01
 def test_new_filepath():
     old_filepath = r"C:\C_Video_Python\The Big Bang Theory\BigBang Theory Season 02\Season 02 Subtitle\French_whisper_base\BigBang FR S02E01_FR.srt"
     output_folder = r"C:\Users\Norat\OneDrive\Python MyLib\Python MyLib 01_test"
