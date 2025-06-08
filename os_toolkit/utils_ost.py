@@ -5,6 +5,7 @@ import pandas as pd
 VIDEO_ALL_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mts", ".m2ts"]
 SUBTITLE_ALL_EXTENSIONS = [".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"]
 AUDIO_ALL_EXTENSIONS = [".mp3", ".aac", ".wav", ".flac", ".alac", ".ogg", ".wma", ".m4a", ".aiff"]
+MEDIA_ALL_EXTENSIONS = VIDEO_ALL_EXTENSIONS + SUBTITLE_ALL_EXTENSIONS + AUDIO_ALL_EXTENSIONS
 
 def get_folders_name(parent_path: str| Path) -> list[str]:
     
@@ -716,28 +717,28 @@ def auto_rename_series(folder_path,prefix, suffix = "", pattern = r'[sS]\d\d[eE]
     import re
     import os
     
-    video_path_list = get_full_filename(folder_path,video_extensions = VIDEO_ALL_EXTENSIONS)
-    video_name_list = get_filename(folder_path,video_extensions = VIDEO_ALL_EXTENSIONS)
-    subtitle_path_list = get_full_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
-    subtitle_name_list = get_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
+    media_path_list = get_full_filename(folder_path,extension = MEDIA_ALL_EXTENSIONS)
+    media_name_list = get_filename(folder_path,extension = MEDIA_ALL_EXTENSIONS)
+    # subtitle_path_list = get_full_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
+    # subtitle_name_list = get_filename(folder_path, SUBTITLE_ALL_EXTENSIONS)
     
-    for i, filename in enumerate(video_name_list):
+    for i, filename in enumerate(media_name_list):
         episode = re.findall(pattern, filename)
         extension = filename.split('.')[-1]
         # episode will be empty list when SxxExx is not found
         if len(episode) > 0:
             new_name = prefix_in + episode[0] + suffix + "." +  extension
             new_path = str(folder_path) + "/" + new_name
-            os.rename(video_path_list[i],new_path)
+            os.rename(media_path_list[i],new_path)
     
-    for i, filename in enumerate(subtitle_name_list):
-        episode = re.findall(pattern, filename)
-        # episode will be empty list when SxxExx is not found
-        if len(episode) > 0:
-            extension = filename.split('.')[-1]
-            new_name = prefix_in + episode[0] + suffix + "." +  extension
-            new_path = str(folder_path) + "/" + new_name
-            os.rename(subtitle_path_list[i],new_path)
+    # for i, filename in enumerate(subtitle_name_list):
+    #     episode = re.findall(pattern, filename)
+    #     # episode will be empty list when SxxExx is not found
+    #     if len(episode) > 0:
+    #         extension = filename.split('.')[-1]
+    #         new_name = prefix_in + episode[0] + suffix + "." +  extension
+    #         new_path = str(folder_path) + "/" + new_name
+    #         os.rename(subtitle_path_list[i],new_path)
 
     
     
