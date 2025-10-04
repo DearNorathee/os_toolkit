@@ -51,7 +51,8 @@ def make_move_file_bulk_df(input_root_path: str|Path
     # raise error when there's a na in output_folder_path, also indicate which folder needs to be created
     if df_orginized_step2['output_folder_path'].isna().any():
         na_folders = list(df_orginized_step2[df_orginized_step2['output_folder_path'].isna()]['language'].unique())
-        raise ValueError(f"The following folders need to be created: {na_folders}")
+        print(f"The following folders need to be created: {na_folders}")
+        # raise ValueError(f"The following folders need to be created: {na_folders}")
     return df_orginized_step2
 
 
@@ -107,48 +108,7 @@ def move_file_bulk(
             ,exclude_folder = exclude_folder
         )
         ```
-    # """
-    # #%%
-    # from pandarallel import pandarallel
-    # import shutil
-    # from tqdm.auto import tqdm
-    # from functools import partial
-    # # pandarallel.initialize(progress_bar=True)
-    
-    # filename = get_filename(input_root_path)
-    # input_filepath = get_full_filename(input_root_path)
-    
-    # output_folder_names = get_filename(output_root_path)
-    # output_folder_paths = get_full_filename(output_root_path)
-    
-    # folder_mapping = pd.DataFrame(
-    #     {
-    #         'language':output_folder_names
-    #         ,'output_folder_path':output_folder_paths
-    #     }
-    #     )
-    # # exclude 'Amazon_temp' in folder_mapping
-    # folder_mapping = folder_mapping[~folder_mapping['language'].isin(exclude_folder) ].reset_index(drop=True)
-
-    # df_orginized_step1 = pd.DataFrame(
-    #     {
-    #     'filepath':input_filepath
-    #     ,'filename':filename
-    #     }
-    #     )
-    
-    # map_filename_func_step2 = partial(map_filename_func, mapping_dict=mapping_dict)
-    # # step2 apply map_filename_to_lang function to the filename column
-    # # df_orginized_step1['language'] = df_orginized_step1['filename'].parallel_apply(map_filename_func)
-    # df_orginized_step1['language'] = df_orginized_step1.apply(
-    #     lambda row: map_filename_func_step2(row['filename'])
-    #     , axis=1)
-    # df_orginized_step2 = pd.merge(df_orginized_step1, folder_mapping, on='language', how='left')
-    # # raise error when there's a na in output_folder_path, also indicate which folder needs to be created
-    # if df_orginized_step2['output_folder_path'].isna().any():
-    #     na_folders = list(df_orginized_step2[df_orginized_step2['output_folder_path'].isna()]['language'].unique())
-    #     raise ValueError(f"The following folders need to be created: {na_folders}")
-    
+    """
     df_orginized_step2 = make_move_file_bulk_df(
         input_root_path = input_root_path
         ,output_root_path = output_root_path
