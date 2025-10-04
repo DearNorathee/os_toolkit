@@ -1,4 +1,4 @@
-from typing import Literal, Union, Any, List, Tuple, Type
+from typing import Literal, Union, Any, List, Tuple, Type, Callable
 from pathlib import Path
 import pandas as pd
 
@@ -6,6 +6,216 @@ VIDEO_ALL_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
 SUBTITLE_ALL_EXTENSIONS = [".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"]
 AUDIO_ALL_EXTENSIONS = [".mp3", ".aac", ".wav", ".flac", ".alac", ".ogg", ".wma", ".m4a", ".aiff"]
 MEDIA_ALL_EXTENSIONS = VIDEO_ALL_EXTENSIONS + SUBTITLE_ALL_EXTENSIONS + AUDIO_ALL_EXTENSIONS
+
+def make_move_file_bulk_df(input_root_path: str|Path
+    ,output_root_path: str|Path
+    ,map_filename_func: Callable
+    ,mapping_dict: dict
+    ,exclude_folder: List[str] = []
+    ):
+
+    import shutil
+    from tqdm.auto import tqdm
+    from functools import partial
+    # pandarallel.initialize(progress_bar=True)
+    
+    filename = get_filename(input_root_path)
+    input_filepath = get_full_filename(input_root_path)
+    
+    output_folder_names = get_filename(output_root_path)
+    output_folder_paths = get_full_filename(output_root_path)
+    
+    folder_mapping = pd.DataFrame(
+        {
+            'language':output_folder_names
+            ,'output_folder_path':output_folder_paths
+        }
+        )
+    # exclude 'Amazon_temp' in folder_mapping
+    folder_mapping = folder_mapping[~folder_mapping['language'].isin(exclude_folder) ].reset_index(drop=True)
+
+    df_orginized_step1 = pd.DataFrame(
+        {
+        'filepath':input_filepath
+        ,'filename':filename
+        }
+        )
+    
+    map_filename_func_step2 = partial(map_filename_func, mapping_dict=mapping_dict)
+    # step2 apply map_filename_to_lang function to the filename column
+    # df_orginized_step1['language'] = df_orginized_step1['filename'].parallel_apply(map_filename_func)
+    df_orginized_step1['language'] = df_orginized_step1.apply(
+        lambda row: map_filename_func_step2(row['filename'])
+        , axis=1)
+    df_orginized_step2 = pd.merge(df_orginized_step1, folder_mapping, on='language', how='left')
+    # raise error when there's a na in output_folder_path, also indicate which folder needs to be created
+    if df_orginized_step2['output_folder_path'].isna().any():
+        na_folders = list(df_orginized_step2[df_orginized_step2['output_folder_path'].isna()]['language'].unique())
+        raise ValueError(f"The following folders need to be created: {na_folders}")
+    return df_orginized_step2
+
+
+def move_file_bulk(
+    input_root_path: str|Path
+    ,output_root_path: str|Path
+    ,map_filename_func: Callable
+    ,mapping_dict: dict
+    ,exclude_folder: List[str] = []
+    ):
+    #%%
+    """
+        Move the media file to the output folder.
+        
+        Parameters
+        ----------
+        input_root_path : str|Path
+            Root folder containing files to move.
+        output_root_path : str|Path
+            Root folder containing destination subfolders.
+        map_filename_func : Callable
+            Function that takes a filename and returns a mapping key (e.g., language name).
+        start_mapping_dict : dict
+            Initial mapping dictionary to merge with discovered output folders.
+            Keys should match the output of map_filename_func.
+        exclude_folder : List[str], optional
+            List of folder names to exclude from output folders.
+        
+        You need to specify the start dictionary like following example
+        ```python
+        lang_dict_lower = vt.make_all_language_dict(key_as="alpha2",value_as="name")  
+        lang_dict_upper = dict()
+        for key, value in lang_dict_lower.items():
+            lang_dict_upper[key.upper()] = value
+        ```
+        Returns
+        -------
+        None
+        
+        Raises
+        ------
+        ValueError
+            If there are any na in output_folder_path.
+
+        Example:
+        --------
+        ```python
+        move_file_bulk(
+            input_root_path = input_root_path
+            ,output_root_path = output_root_path
+            ,map_filename_func = map_filename_to_lang
+            ,start_mapping_dict = lang_dict_upper
+            ,exclude_folder = exclude_folder
+        )
+        ```
+    # """
+    # #%%
+    # from pandarallel import pandarallel
+    # import shutil
+    # from tqdm.auto import tqdm
+    # from functools import partial
+    # # pandarallel.initialize(progress_bar=True)
+    
+    # filename = get_filename(input_root_path)
+    # input_filepath = get_full_filename(input_root_path)
+    
+    # output_folder_names = get_filename(output_root_path)
+    # output_folder_paths = get_full_filename(output_root_path)
+    
+    # folder_mapping = pd.DataFrame(
+    #     {
+    #         'language':output_folder_names
+    #         ,'output_folder_path':output_folder_paths
+    #     }
+    #     )
+    # # exclude 'Amazon_temp' in folder_mapping
+    # folder_mapping = folder_mapping[~folder_mapping['language'].isin(exclude_folder) ].reset_index(drop=True)
+
+    # df_orginized_step1 = pd.DataFrame(
+    #     {
+    #     'filepath':input_filepath
+    #     ,'filename':filename
+    #     }
+    #     )
+    
+    # map_filename_func_step2 = partial(map_filename_func, mapping_dict=mapping_dict)
+    # # step2 apply map_filename_to_lang function to the filename column
+    # # df_orginized_step1['language'] = df_orginized_step1['filename'].parallel_apply(map_filename_func)
+    # df_orginized_step1['language'] = df_orginized_step1.apply(
+    #     lambda row: map_filename_func_step2(row['filename'])
+    #     , axis=1)
+    # df_orginized_step2 = pd.merge(df_orginized_step1, folder_mapping, on='language', how='left')
+    # # raise error when there's a na in output_folder_path, also indicate which folder needs to be created
+    # if df_orginized_step2['output_folder_path'].isna().any():
+    #     na_folders = list(df_orginized_step2[df_orginized_step2['output_folder_path'].isna()]['language'].unique())
+    #     raise ValueError(f"The following folders need to be created: {na_folders}")
+    
+    df_orginized_step2 = make_move_file_bulk_df(
+        input_root_path = input_root_path
+        ,output_root_path = output_root_path
+        ,map_filename_func = map_filename_func
+        ,mapping_dict = mapping_dict
+        ,exclude_folder = exclude_folder
+    )
+
+    copy_file_df(
+        input_file_path=df_orginized_step2['filepath']
+        ,output_folder_path=df_orginized_step2['output_folder_path']
+        ,filename=df_orginized_step2['filename']
+        ,progress_bar=True
+    )
+
+def copy_file_df(
+    input_file_path: pd.Series,
+    output_folder_path: pd.Series,
+    filename: pd.Series | None = None,
+    progress_bar: bool = True
+) -> None:
+    """
+    Copy files from source paths to destination folders.
+    
+    Parameters
+    ----------
+    input_file_path : pd.Series
+        Series of source file paths.
+    output_folder_path : pd.Series
+        Series of destination folder paths.
+    filename : pd.Series | None, optional
+        Series of filenames for display in progress bar. If None, uses source filenames.
+    progress_bar : bool, optional
+        Whether to show progress bar. Default is True.
+    """
+
+    # medium tested via main_orginizer
+
+    import shutil
+    from tqdm.auto import tqdm
+    from pathlib import Path
+
+    if len(input_file_path) != len(output_folder_path):
+        raise ValueError("input_file_path and output_folder_path must have the same length")
+    
+    if filename is None:
+        filename = input_file_path.apply(lambda x: Path(x).name)
+    
+    if progress_bar:
+        loop_obj = tqdm(
+            zip(input_file_path, output_folder_path, filename),
+            total=len(input_file_path),
+            colour='blue'
+        )
+    else:
+        loop_obj = zip(input_file_path, output_folder_path, filename)
+    
+    for filepath, output_folder, fname in loop_obj:
+        if progress_bar:
+            loop_obj.set_description(f"Copying: {fname}")
+        
+        src = Path(filepath)
+        dst_dir = Path(output_folder)
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst = dst_dir / src.name
+        shutil.copy2(src, dst)
+
 
 def get_folders_name(parent_path: str| Path) -> list[str]:
     
@@ -390,17 +600,20 @@ def filesize_in_folder(
             return (0, 0, 0)
             
         return (offline, online_onedrive, online_gdrive)
-
+    
+    # replace 1000 with 1024, because the size doesn't reconciled with WinTree
+    EXACT_THOUSAND = (1024)
+    
     if unit == "byte":
         unit_divider = 1
     elif unit == "KB":
-        unit_divider = 1000
+        unit_divider = EXACT_THOUSAND
     elif unit == "MB":
-        unit_divider = 1000**2
+        unit_divider = EXACT_THOUSAND**2
     elif unit == "GB":
-        unit_divider = 1000**3
+        unit_divider = EXACT_THOUSAND**3
     elif unit == "TB":
-        unit_divider = 1000**4
+        unit_divider = EXACT_THOUSAND**4
     else:
         raise ValueError("Unsupported unit")
     
@@ -428,7 +641,7 @@ def filesize_in_folder(
     return df
 
 
-def delete_files_in_folder(folder_path: Path | str, verbose=1, go_to_recycle_bin: bool = True):
+def delete_files_in_folder(folder_path: Path | str, verbose=0, go_to_recycle_bin: bool = True):
     # medium tested
     import os
     from pathlib import Path
@@ -712,6 +925,9 @@ def auto_rename_series(folder_path,prefix, suffix = "", pattern = r'[sS]\d\d[eE]
     # for automatically rename series files
     
     # it would additional space to prefix if it hasn't already had on
+    
+    # ToAdd01: if it raise PermissionError because some videos are used, then just skip that video and raise warning not error
+    
     prefix_in = prefix if prefix[-1] in [" ","_"] else prefix + " "
 
     import re
