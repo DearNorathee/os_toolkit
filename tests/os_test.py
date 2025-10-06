@@ -3,6 +3,40 @@ from pathlib import Path
 from os_toolkit.utils_ost import *
 from os_toolkit.cant_use_ost import *
 
+
+def test_move_file_bulk():
+    
+    from pandarallel import pandarallel
+    import shutil
+    from tqdm.auto import tqdm
+    from functools import partial
+
+    # pandarallel.initialize(progress_bar=True)
+    
+    input_root_path = r"C:\C_Video_Python\video_toolkit_test\test_move_media_file_bulk\test_01\The Mentalist Season 07 Audio\Amazon_temp"
+    output_root_path = r'C:\C_Video_Python\video_toolkit_test\test_move_media_file_bulk\test_01\The Mentalist Season 07 Audio'
+    exclude_folder = ['Amazon_temp']
+    
+    # lang_dict_upper is used inside map_filename_to_lang
+    lang_dict_upper = make_lang_start_dict()
+    # map_filename_to_lang_step2 = partial(map_filename_to_lang, mapping_dict=lang_dict_upper)
+
+    # move_file_df is for debugging to see which files will go to which folder
+    move_file_df = ost.make_move_file_bulk_df(
+        input_root_path = input_root_path
+        ,output_root_path = output_root_path
+        ,map_filename_func = map_filename_to_lang
+        ,mapping_dict = lang_dict_upper
+        ,exclude_folder = exclude_folder
+    )
+    ost.move_file_bulk(
+        input_root_path = input_root_path
+        ,output_root_path = output_root_path
+        ,map_filename_func = map_filename_to_lang
+        ,mapping_dict = lang_dict_upper
+        ,exclude_folder = exclude_folder
+    )
+
 def test_get_folders_name():
     input_path01 = r"C:\DVDFab\StreamFab\Output\Netflix\The Big Bang Theory"
     actual01 = get_folders_name(input_path01)

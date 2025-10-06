@@ -62,8 +62,8 @@ def move_file_bulk(
     ,map_filename_func: Callable
     ,mapping_dict: dict
     ,exclude_folder: List[str] = []
+    ,progress_bar:bool = True
     ):
-    #%%
     """
         Move the media file to the output folder.
         
@@ -121,7 +121,7 @@ def move_file_bulk(
         input_file_path=df_orginized_step2['filepath']
         ,output_folder_path=df_orginized_step2['output_folder_path']
         ,filename=df_orginized_step2['filename']
-        ,progress_bar=True
+        ,progress_bar=progress_bar
     )
 
 def copy_file_df(
@@ -148,7 +148,7 @@ def copy_file_df(
     # medium tested via main_orginizer
 
     import shutil
-    from tqdm.auto import tqdm
+    from tqdm import tqdm
     from pathlib import Path
 
     if len(input_file_path) != len(output_folder_path):
@@ -161,7 +161,9 @@ def copy_file_df(
         loop_obj = tqdm(
             zip(input_file_path, output_folder_path, filename),
             total=len(input_file_path),
-            colour='blue'
+            colour='#ffeb9c'
+            , leave = False
+            ,position = 1
         )
     else:
         loop_obj = zip(input_file_path, output_folder_path, filename)
@@ -633,18 +635,18 @@ def delete_files_in_folder(folder_path: Path | str, verbose=0, go_to_recycle_bin
 def extract_folder_structure(
         root_folder: Path |str) -> dict[Any, Any] | None | List:
     """
-    Extract the structure of a folder as dictionary representation.
+        Extract the structure of a folder as dictionary representation.
 
-    Parameters
-    ----------
-    root_folder : path-like
-        The path to the root folder to extract the structure from.
+        Parameters
+        ----------
+        root_folder : path-like
+            The path to the root folder to extract the structure from.
 
-    Returns
-    -------
-    structure : dict
-        A dictionary with the subfolders as keys and their structures as values.
-        If the subfolders do not have any subfolders, they are represented as a list.
+        Returns
+        -------
+        structure : dict
+            A dictionary with the subfolders as keys and their structures as values.
+            If the subfolders do not have any subfolders, they are represented as a list.
     """
     # medium tested
     # solo from o1 as of Oct 14, 2024
