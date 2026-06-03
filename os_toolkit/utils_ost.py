@@ -7,6 +7,186 @@ SUBTITLE_ALL_EXTENSIONS = [".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"]
 AUDIO_ALL_EXTENSIONS = [".mp3", ".aac", ".wav", ".flac", ".alac", ".ogg", ".wma", ".m4a", ".aiff"]
 MEDIA_ALL_EXTENSIONS = VIDEO_ALL_EXTENSIONS + SUBTITLE_ALL_EXTENSIONS + AUDIO_ALL_EXTENSIONS
 
+
+def rename(old_path: str | Path, new_name: str) -> None:
+    """
+    Renames a file in its current directory.
+    - old_path: The full path to the existing file.
+    - new_name: The new filename (with or without extension).
+    """
+    
+    # medium tested
+    
+    # 1. Convert to a Path object if it's a string
+    file_path = Path(old_path)
+    
+    # 2. Safety check: does the file actually exist?
+    if not file_path.exists():
+        print(f"Error: The file '{file_path}' does not exist.")
+        return
+
+    # 3. Handle the extension
+    # If new_name doesn't have an extension, we grab it from the old file
+    if "." not in new_name:
+        new_name = f"{new_name}{file_path.suffix}"
+
+    # 4. Create the full destination path in the same directory
+    new_path = file_path.with_name(new_name)
+
+    # 5. Perform the rename
+    try:
+        file_path.rename(new_path)
+    except FileExistsError as e:
+        raise FileExistsError(f"{new_name} already exists in the folder please check the name.")
+    except Exception as e:
+        print(f"Error during rename: {e}")
+        
+def apply_func_to_files(root_folder: str | Path, validate_files: Callable[[Path], bool], apply_func: Callable[[Path], None]) -> None:
+    """
+    Apply a user-defined function to files under a root folder, filtered by a validation function.
+
+    Parameters
+    ----------
+    root_folder : str | Path
+        Root directory containing the files to process.
+    validate_files : Callable[[Path], bool]
+        Function that receives a Path and returns True if the file should be processed.
+    apply_func : Callable[[Path], None]
+        Function to apply to each valid file (e.g., send2trash).
+    """
+
+    # Get all file paths using the user's ost.get_full_filename
+    file_paths = get_full_filename(root_folder)
+
+    for filename in file_paths:
+        path_obj = Path(filename)
+        try:
+            if validate_files(path_obj):
+                apply_func(path_obj)
+        except Exception as e:
+            print(f"Error processing: {path_obj}❌")
+
+def move_repeated_lang_media(media_with_file_path:str|Path, move_to_folders:list[str|Path]) -> pd.DataFrame:
+    import re
+    from collections import defaultdict
+    import pandas as pd
+    from send2trash import send2trash
+    
+    """
+    Move duplicated multi-language media files into separate folders by episode.
+    
+    This function organizes and separates repeated language versions of media files (e.g., multiple audio or subtitle 
+    tracks per episode) into different destination folders based on detected episode codes. It identifies episodes 
+    using a naming pattern like "S01E05" and distributes each language variant to a specified folder.
+    
+    Parameters
+    ----------
+    media_with_file_path : str or Path
+        Path to a folder containing the media files to be organized. 
+        Filenames are expected to follow a pattern such as "ShowName_S01E05_lang_en.mp4".
+    
+    move_to_folders : list of str or Path
+        A list of destination folders where each language variant will be moved.
+        The number of folders must match the number of language variants per episode.
+    
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame showing the mapping between episode names and language indices.
+        Columns are labeled as `lang_01`, `lang_02`, etc., where each column corresponds 
+        to a destination folder in `move_to_folders`.
+    
+    Raises
+    ------
+    ValueError
+        If the number of folders in `move_to_folders` does not match the number of language variants found.
+    FileNotFoundError
+        If a specified path does not exist.
+    
+    Notes
+    -----
+    - The function detects episodes using the regular expression pattern `[Ss]\d\d[Ee]\d\d`.
+    - Each episode’s language variants are sorted by language index (the string following the episode code in the filename).
+    - Files are copied to the specified folders using `ost.copy_file_df`, and the originals are sent to the system trash.
+    - Missing or unmatched files will result in empty cells in the output DataFrame, indicating potential inconsistencies.
+    
+    Examples
+    --------
+    Organize multilingual media into different folders:
+    >>> move_to_folders = ["./lang1", "./lang2", "./lang3"]
+    >>> df = move_repeated_lang_media("./media_folder", move_to_folders)
+    >>> print(df.head())
+    
+    Output:
+      episode_name lang_01 lang_02 lang_03
+    0        S01E01      en      fr      es
+    1        S01E02      en      fr      es
+    
+    Directory structure after execution:
+    media_folder/
+    ├── lang1/  → English files
+    ├── lang2/  → French files
+    └── lang3/  → Spanish files
+    """
+
+    
+    # high tested
+    # took about 2 hr including testing
+    # TOADD_01: raise warning when some sub in episodes are not found(if there's a blank in df_episode_index)
+    media_file_names = get_filename(media_with_file_path)
+    media_file_paths = get_full_filename(media_with_file_path)
+
+    pattern = r"[Ss]\d\d[Ee]\d\d"
+    episode_dict = defaultdict(list)
+    
+    for i, text in enumerate(media_file_names):
+        matches = list(re.finditer(pattern, text))[-1]
+        episode_name = matches.group()
+        episode_end_index = matches.end()
+        lang_index = text[episode_end_index:].split('_')[1]
+        episode_dict[episode_name].append((lang_index,media_file_paths[i]))
+    
+    # sorting to make sure that index is in increasing order
+    for key in episode_dict.keys():
+        episode_dict[key] = sorted(episode_dict[key], key=lambda x: x[0])
+    
+    
+    rows_index = {k: [t[0] for t in v] for k, v in episode_dict.items()}
+    move_to_folders_len = len(move_to_folders)
+    max_len = max(len(v) for v in rows_index.values())        # longest episode list
+    
+    if max_len != move_to_folders_len:
+        raise ValueError(f"Please check the number of folders in move_to_folders should be {max_len}")
+    
+    df_episode_index = (pd.DataFrame.from_dict(rows_index, orient='index')
+            .reindex(columns=range(max_len))            # pad shorter rows with NaN
+            .rename(columns=lambda i: f'lang_{i+1:02d}')
+            .rename_axis('episode_name')
+            .reset_index())
+    
+    rows_path = {k: [t[1] for t in v] for k, v in episode_dict.items()}
+    df_episode_filename = (pd.DataFrame.from_dict(rows_path, orient='index')
+            .reindex(columns=range(max_len))            # pad shorter rows with NaN
+            .rename(columns=lambda i: f'lang_{i+1:02d}')
+            .rename_axis('episode_name')
+            .reset_index())
+    
+    for i in range(1,max_len+1):
+        col = f'lang_{i:02d}'
+        # copy when it's different folder
+        if not Path(move_to_folders[i-1]).resolve(strict=False) == Path(media_with_file_path).resolve(strict=False):
+            copy_file_df(
+                input_file_path = df_episode_filename[col]
+                , output_folder_path= move_to_folders[i-1]
+                ,progress_bar=False
+                )
+            for curr_path in df_episode_filename[col].dropna():
+               try:
+                   send2trash(str(Path(curr_path)))
+               except Exception as e:
+                   print(f"Failed to delete {curr_path}: {e}")
+    return df_episode_index
+
 def make_move_file_bulk_df(input_root_path: str|Path
     ,output_root_path: str|Path
     ,map_filename_func: Callable
@@ -18,7 +198,7 @@ def make_move_file_bulk_df(input_root_path: str|Path
     from tqdm.auto import tqdm
     from functools import partial
     # pandarallel.initialize(progress_bar=True)
-    
+    # TOADD01: when the subttiles prefix could not be found, it should raise a more useful error message.  hi-Latn(as example)
     filename = get_filename(input_root_path)
     input_filepath = get_full_filename(input_root_path)
     
@@ -124,9 +304,64 @@ def move_file_bulk(
         ,progress_bar=progress_bar
     )
 
+# def copy_file_df(
+#     input_file_path: pd.Series,
+#     output_folder_path: pd.Series,
+#     filename: pd.Series | None = None,
+#     progress_bar: bool = True
+# ) -> None:
+#     """
+#     Copy files from source paths to destination folders.
+    
+#     Parameters
+#     ----------
+#     input_file_path : pd.Series
+#         Series of source file paths.
+#     output_folder_path : pd.Series
+#         Series of destination folder paths.
+#     filename : pd.Series | None, optional
+#         Series of filenames for display in progress bar. If None, uses source filenames.
+#     progress_bar : bool, optional
+#         Whether to show progress bar. Default is True.
+#     """
+
+#     # medium tested via main_orginizer
+
+#     import shutil
+#     from tqdm import tqdm
+#     from pathlib import Path
+
+#     if len(input_file_path) != len(output_folder_path):
+#         raise ValueError("input_file_path and output_folder_path must have the same length")
+    
+#     if filename is None:
+#         filename = input_file_path.apply(lambda x: Path(x).name)
+    
+#     if progress_bar:
+#         loop_obj = tqdm(
+#             zip(input_file_path, output_folder_path, filename),
+#             total=len(input_file_path),
+#             colour='#ffeb9c'
+#             , leave = False
+#             ,position = 1
+#         )
+#     else:
+#         loop_obj = zip(input_file_path, output_folder_path, filename)
+    
+#     for filepath, output_folder, fname in loop_obj:
+#         if progress_bar:
+#             # loop_obj.set_description(f"Copying: {fname}")
+#             pass
+        
+#         src = Path(filepath)
+#         dst_dir = Path(output_folder)
+#         dst_dir.mkdir(parents=True, exist_ok=True)
+#         dst = dst_dir / src.name
+#         shutil.copy2(src, dst)
+
 def copy_file_df(
     input_file_path: pd.Series,
-    output_folder_path: pd.Series,
+    output_folder_path: pd.Series | str | Path,
     filename: pd.Series | None = None,
     progress_bar: bool = True
 ) -> None:
@@ -137,41 +372,46 @@ def copy_file_df(
     ----------
     input_file_path : pd.Series
         Series of source file paths.
-    output_folder_path : pd.Series
-        Series of destination folder paths.
+    output_folder_path : pd.Series | str | Path
+        Series of destination folders or a single folder path (applied to all).
     filename : pd.Series | None, optional
         Series of filenames for display in progress bar. If None, uses source filenames.
     progress_bar : bool, optional
         Whether to show progress bar. Default is True.
     """
-
-    # medium tested via main_orginizer
-
+    # v02 => support output_folder_path as Path
     import shutil
     from tqdm import tqdm
     from pathlib import Path
+    import pandas as pd
 
-    if len(input_file_path) != len(output_folder_path):
-        raise ValueError("input_file_path and output_folder_path must have the same length")
-    
+    # normalize folder input to Series
+    if isinstance(output_folder_path, (str, Path)):
+        output_folder_path_in = pd.Series([output_folder_path] * len(input_file_path))
+    else:
+        output_folder_path_in = output_folder_path
+        if len(input_file_path) != len(output_folder_path_in):
+            raise ValueError("input_file_path and output_folder_path must have the same length")
+
+    # derive filenames if not given
     if filename is None:
         filename = input_file_path.apply(lambda x: Path(x).name)
-    
-    if progress_bar:
-        loop_obj = tqdm(
-            zip(input_file_path, output_folder_path, filename),
+
+    # set up iteration
+    loop_obj = (
+        tqdm(
+            zip(input_file_path, output_folder_path_in, filename),
             total=len(input_file_path),
-            colour='#ffeb9c'
-            , leave = False
-            ,position = 1
+            colour="#ffeb9c",
+            leave=False,
+            position=1,
         )
-    else:
-        loop_obj = zip(input_file_path, output_folder_path, filename)
-    
+        if progress_bar
+        else zip(input_file_path, output_folder_path_in, filename)
+    )
+
+    # perform copies
     for filepath, output_folder, fname in loop_obj:
-        if progress_bar:
-            loop_obj.set_description(f"Copying: {fname}")
-        
         src = Path(filepath)
         dst_dir = Path(output_folder)
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -969,7 +1209,10 @@ def extract_filename(file_path: Union[list[str], list[Path] ,str, Path],
         return name_no_ext_list
 
 
-def get_filename(folder_path,extension: Union[str, List[str]] = "all") -> Union[List[str], List[str]]:
+def get_filename(folder_path
+    ,extension: Union[str, List[str]] = "all"
+    ,pattern:str|None = None
+    ) -> Union[List[str], List[str]]:
     import os
     """ 
     get all of filename that has 
@@ -977,6 +1220,10 @@ def get_filename(folder_path,extension: Union[str, List[str]] = "all") -> Union[
     # also include "folder"  case
 # tested small
 # new feature1: include subfolders
+    import re
+
+
+
     if extension == "all":
         out_list = [ file for file in os.listdir(folder_path) ]
 
@@ -1010,22 +1257,35 @@ def get_filename(folder_path,extension: Union[str, List[str]] = "all") -> Union[
             elif "folder" in extension:
                 out_list.append(file)
 
-        return out_list
+        # return out_list
 
     else:
         print("Don't support this dataype for extension: please input only string or list")
         return False
+    
+    if pattern:
+        # this part is not tested yet
+        pattern_in = re.compile(pattern)
+        out_list_2 = [f for f in out_list if pattern_in.match(f)]
+        return out_list_2
 
     return out_list
 
-def get_full_filename(folder_path,extension: Union[str, List[str]] = "all"):
+def get_full_filename(
+        folder_path
+        ,extension: Union[str, List[str]] = "all"
+        ,return_type:Type|str = str):
     import os
     # tested small
     short_names = get_filename(folder_path,extension)
     out_list = []
     for short_name in short_names:
         full_name = os.path.join(folder_path,short_name)
-        out_list.append(full_name)
+        full_name_Path = Path(full_name)
+        if return_type in [str,"str"]:
+            out_list.append(full_name)
+        elif return_type in [Path,"Path"]:
+            out_list.append(full_name_Path)
     return out_list
 
 
