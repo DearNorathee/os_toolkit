@@ -1274,12 +1274,19 @@ def get_filename(folder_path
 def get_full_filename(
         folder_path
         ,extension: Union[str, List[str]] = "all"
+        ,prefix: str | None = None
+        ,suffix: str | None = None
         ,return_type:Type|str = str):
     import os
     # tested small
     short_names = get_filename(folder_path,extension)
     out_list = []
     for short_name in short_names:
+        name_no_ext = Path(short_name).stem
+        if prefix is not None and not name_no_ext.startswith(prefix):
+            continue
+        if suffix is not None and not name_no_ext.endswith(suffix):
+            continue
         full_name = os.path.join(folder_path,short_name)
         full_name_Path = Path(full_name)
         if return_type in [str,"str"]:
