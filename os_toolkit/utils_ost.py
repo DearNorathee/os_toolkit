@@ -1212,6 +1212,8 @@ def extract_filename(file_path: Union[list[str], list[Path] ,str, Path],
 def get_filename(folder_path
     ,extension: Union[str, List[str]] = "all"
     ,pattern:str|None = None
+    ,prefix: str | None = None
+    ,suffix: str | None = None
     ) -> Union[List[str], List[str]]:
     import os
     """ 
@@ -1263,6 +1265,13 @@ def get_filename(folder_path
         print("Don't support this dataype for extension: please input only string or list")
         return False
     
+    if prefix is not None or suffix is not None:
+        out_list = [
+            f for f in out_list
+            if (prefix is None or Path(f).stem.startswith(prefix))
+            and (suffix is None or Path(f).stem.endswith(suffix))
+        ]
+
     if pattern:
         # this part is not tested yet
         pattern_in = re.compile(pattern)
@@ -1279,14 +1288,14 @@ def get_full_filename(
         ,return_type:Type|str = str):
     import os
     # tested small
-    short_names = get_filename(folder_path,extension)
+    short_names = get_filename(
+        folder_path,
+        extension,
+        prefix=prefix,
+        suffix=suffix,
+    )
     out_list = []
     for short_name in short_names:
-        name_no_ext = Path(short_name).stem
-        if prefix is not None and not name_no_ext.startswith(prefix):
-            continue
-        if suffix is not None and not name_no_ext.endswith(suffix):
-            continue
         full_name = os.path.join(folder_path,short_name)
         full_name_Path = Path(full_name)
         if return_type in [str,"str"]:
