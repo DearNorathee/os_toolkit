@@ -1220,11 +1220,9 @@ def get_filename(folder_path
     get all of filename that has 
     """
     # also include "folder"  case
-# tested small
-# new feature1: include subfolders
+    # tested small
+    # new feature1: include subfolders
     import re
-
-
 
     if extension == "all":
         out_list = [ file for file in os.listdir(folder_path) ]
