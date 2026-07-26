@@ -1209,11 +1209,27 @@ def extract_filename(file_path: Union[list[str], list[Path] ,str, Path],
         return name_no_ext_list
 
 
+def _stem_matches_prefix_suffix(
+        stem: str,
+        prefix: str | list[str] | None = None,
+        suffix: str | list[str] | None = None,
+) -> bool:
+    if prefix is not None:
+        prefixes = [prefix] if isinstance(prefix, str) else prefix
+        if not any(stem.startswith(p) for p in prefixes):
+            return False
+    if suffix is not None:
+        suffixes = [suffix] if isinstance(suffix, str) else suffix
+        if not any(stem.endswith(s) for s in suffixes):
+            return False
+    return True
+
+
 def get_filename(folder_path
     ,extension: Union[str, List[str]] = "all"
     ,pattern:str|None = None
-    ,prefix: str | None = None
-    ,suffix: str | None = None
+    ,prefix: str | list[str] | None = None
+    ,suffix: str | list[str] | None = None
     ) -> Union[List[str], List[str]]:
     import os
     """ 
@@ -1266,8 +1282,7 @@ def get_filename(folder_path
     if prefix is not None or suffix is not None:
         out_list = [
             f for f in out_list
-            if (prefix is None or Path(f).stem.startswith(prefix))
-            and (suffix is None or Path(f).stem.endswith(suffix))
+            if _stem_matches_prefix_suffix(Path(f).stem, prefix, suffix)
         ]
 
     if pattern:
@@ -1281,8 +1296,8 @@ def get_filename(folder_path
 def get_full_filename(
         folder_path
         ,extension: Union[str, List[str]] = "all"
-        ,prefix: str | None = None
-        ,suffix: str | None = None
+        ,prefix: str | list[str] | None = None
+        ,suffix: str | list[str] | None = None
         ,return_type:Type|str = str):
     import os
     # tested small
