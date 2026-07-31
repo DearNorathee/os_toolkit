@@ -1230,7 +1230,7 @@ def get_filename(folder_path
     ,pattern:str|None = None
     ,prefix: str | list[str] | None = None
     ,suffix: str | list[str] | None = None
-    ) -> Union[List[str], List[str]]:
+    ) -> Union[str, List[str], bool]:
     import os
     """ 
     get all of filename that has 
@@ -1289,8 +1289,12 @@ def get_filename(folder_path
         # this part is not tested yet
         pattern_in = re.compile(pattern)
         out_list_2 = [f for f in out_list if pattern_in.match(f)]
+        if len(out_list_2) == 1:
+            return out_list_2[0]
         return out_list_2
 
+    if len(out_list) == 1:
+        return out_list[0]
     return out_list
 
 def get_full_filename(
@@ -1307,6 +1311,11 @@ def get_full_filename(
         prefix=prefix,
         suffix=suffix,
     )
+    if short_names is False:
+        return False
+    if isinstance(short_names, str):
+        short_names = [short_names]
+
     out_list = []
     for short_name in short_names:
         full_name = os.path.join(folder_path,short_name)
@@ -1315,6 +1324,8 @@ def get_full_filename(
             out_list.append(full_name)
         elif return_type in [Path,"Path"]:
             out_list.append(full_name_Path)
+    if len(out_list) == 1:
+        return out_list[0]
     return out_list
 
 
